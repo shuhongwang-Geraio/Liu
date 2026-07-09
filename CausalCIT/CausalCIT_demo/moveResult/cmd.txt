@@ -1,0 +1,111 @@
+PS C:\Users\RedMoon\Desktop\0519\刘\CausalCIT_demo> D:/Project/Miniconda/Scripts/activate
+PS C:\Users\RedMoon\Desktop\0519\刘\CausalCIT_demo> conda activate XiangMu_Liu
+PS C:\Users\RedMoon\Desktop\0519\刘\CausalCIT_demo> & D:/Project/Miniconda/envs/XiangMu_Liu/python.exe c:/Users/RedMoon/Desktop/0519/刘/CausalCIT_demo/run_demo.py
+======================================================================
+  CausalCIT: 因果通道交互Transformer Demo
+  Causal Channel Interaction Transformer
+======================================================================
+  设备: cpu
+  配置: seq_len=96, pred_len=96, d_model=16, patch_len=16
+
+======================================================================
+实验1: 合成数据 - 因果通道识别与预测性能
+======================================================================
+
+--- PatchTST (Baseline: Channel-Independent) ---
+  参数量: 35,182
+  Epoch   1/20 | Train Loss: 0.737415 | Val Loss: 0.771206 | LR: 1.04e-04
+  Epoch   2/20 | Train Loss: 0.466756 | Val Loss: 0.697867 | LR: 2.80e-04
+  Epoch   3/20 | Train Loss: 0.425947 | Val Loss: 0.689130 | LR: 5.21e-04
+  Epoch   4/20 | Train Loss: 0.415302 | Val Loss: 0.683003 | LR: 7.61e-04
+  Epoch   5/20 | Train Loss: 0.409631 | Val Loss: 0.688835 | LR: 9.36e-04
+  Epoch   6/20 | Train Loss: 0.405867 | Val Loss: 0.684594 | LR: 1.00e-03
+  Epoch   7/20 | Train Loss: 0.404119 | Val Loss: 0.686852 | LR: 9.87e-04
+  Epoch   8/20 | Train Loss: 0.401682 | Val Loss: 0.686394 | LR: 9.50e-04
+  Epoch   9/20 | Train Loss: 0.400177 | Val Loss: 0.688894 | LR: 8.90e-04
+  Early stopping at epoch 9
+  Test MSE: 0.671749 | MAE: 0.641596
+
+--- CausalCIT (因果通道交互Transformer) ---
+  参数量: 36,946
+  Epoch   1/20 | Train Loss: 0.617233 | Val Loss: 0.746460 | LR: 1.04e-04
+  Epoch   2/20 | Train Loss: 0.434332 | Val Loss: 0.696238 | LR: 2.80e-04
+  Epoch   3/20 | Train Loss: 0.410802 | Val Loss: 0.685764 | LR: 5.21e-04
+  Epoch   4/20 | Train Loss: 0.406274 | Val Loss: 0.684564 | LR: 7.61e-04
+  Epoch   5/20 | Train Loss: 0.403532 | Val Loss: 0.680659 | LR: 9.36e-04
+  Epoch   6/20 | Train Loss: 0.400828 | Val Loss: 0.673663 | LR: 1.00e-03
+  Epoch   7/20 | Train Loss: 0.399120 | Val Loss: 0.647823 | LR: 9.87e-04
+  Epoch   8/20 | Train Loss: 0.395205 | Val Loss: 0.632737 | LR: 9.50e-04
+  Epoch   9/20 | Train Loss: 0.393320 | Val Loss: 0.624987 | LR: 8.90e-04
+  Epoch  10/20 | Train Loss: 0.391426 | Val Loss: 0.619322 | LR: 8.11e-04
+  Epoch  11/20 | Train Loss: 0.390258 | Val Loss: 0.620846 | LR: 7.16e-04
+  Epoch  12/20 | Train Loss: 0.389383 | Val Loss: 0.615940 | LR: 6.11e-04
+  Epoch  13/20 | Train Loss: 0.388496 | Val Loss: 0.610712 | LR: 4.99e-04
+  Epoch  14/20 | Train Loss: 0.388109 | Val Loss: 0.611827 | LR: 3.88e-04
+  Epoch  15/20 | Train Loss: 0.387444 | Val Loss: 0.609809 | LR: 2.82e-04
+  Epoch  16/20 | Train Loss: 0.387266 | Val Loss: 0.608510 | LR: 1.88e-04
+  Epoch  17/20 | Train Loss: 0.386959 | Val Loss: 0.609478 | LR: 1.09e-04
+  Epoch  18/20 | Train Loss: 0.386475 | Val Loss: 0.607743 | LR: 4.92e-05
+  Epoch  19/20 | Train Loss: 0.386475 | Val Loss: 0.608458 | LR: 1.24e-05
+  Epoch  20/20 | Train Loss: 0.386254 | Val Loss: 0.608449 | LR: 4.52e-09
+  Test MSE: 0.606936 | MAE: 0.600941
+
+  可视化已保存: ./output\synthetic_results.png
+
+======================================================================
+实验3: OOD鲁棒性实验 - 分布漂移场景
+======================================================================
+
+--- PatchTST ---
+  Epoch   1/20 | Train Loss: 0.744904 | Val Loss: 0.770557 | LR: 1.04e-04
+  Epoch   2/20 | Train Loss: 0.467295 | Val Loss: 0.696098 | LR: 2.80e-04
+  Epoch   3/20 | Train Loss: 0.425650 | Val Loss: 0.686910 | LR: 5.21e-04
+  Epoch   4/20 | Train Loss: 0.414600 | Val Loss: 0.686416 | LR: 7.61e-04
+  Epoch   5/20 | Train Loss: 0.408440 | Val Loss: 0.689470 | LR: 9.36e-04
+  Epoch   6/20 | Train Loss: 0.405348 | Val Loss: 0.684087 | LR: 1.00e-03
+  Epoch   7/20 | Train Loss: 0.402930 | Val Loss: 0.685864 | LR: 9.87e-04
+  Epoch   8/20 | Train Loss: 0.400998 | Val Loss: 0.689916 | LR: 9.50e-04
+  Epoch   9/20 | Train Loss: 0.399537 | Val Loss: 0.690330 | LR: 8.90e-04
+  Epoch  10/20 | Train Loss: 0.398163 | Val Loss: 0.686554 | LR: 8.11e-04
+  Epoch  11/20 | Train Loss: 0.396724 | Val Loss: 0.691841 | LR: 7.16e-04
+  Early stopping at epoch 11
+  ID Test  MSE: 0.666194 | MAE: 0.641362
+  OOD Test MSE: 0.440906 | MAE: 0.491122
+  Robustness Gap (MSE): -0.225288
+
+--- CausalCIT ---
+  Epoch   1/20 | Train Loss: 0.639233 | Val Loss: 0.772116 | LR: 1.04e-04
+  Epoch   2/20 | Train Loss: 0.443135 | Val Loss: 0.702182 | LR: 2.80e-04
+  Epoch   3/20 | Train Loss: 0.412418 | Val Loss: 0.691562 | LR: 5.21e-04
+  Epoch   4/20 | Train Loss: 0.406827 | Val Loss: 0.686752 | LR: 7.61e-04
+  Epoch   5/20 | Train Loss: 0.403521 | Val Loss: 0.683036 | LR: 9.36e-04
+  Epoch   6/20 | Train Loss: 0.401052 | Val Loss: 0.691142 | LR: 1.00e-03
+  Epoch   7/20 | Train Loss: 0.399015 | Val Loss: 0.683698 | LR: 9.87e-04
+  Epoch   8/20 | Train Loss: 0.397655 | Val Loss: 0.682317 | LR: 9.50e-04
+  Epoch   9/20 | Train Loss: 0.396513 | Val Loss: 0.681097 | LR: 8.90e-04
+  Epoch  10/20 | Train Loss: 0.395944 | Val Loss: 0.682794 | LR: 8.11e-04
+  Epoch  11/20 | Train Loss: 0.395081 | Val Loss: 0.669552 | LR: 7.16e-04
+  Epoch  12/20 | Train Loss: 0.394541 | Val Loss: 0.670230 | LR: 6.11e-04
+  Epoch  13/20 | Train Loss: 0.393293 | Val Loss: 0.659974 | LR: 4.99e-04
+  Epoch  14/20 | Train Loss: 0.392858 | Val Loss: 0.653154 | LR: 3.88e-04
+  Epoch  15/20 | Train Loss: 0.391940 | Val Loss: 0.646842 | LR: 2.82e-04
+  Epoch  16/20 | Train Loss: 0.391115 | Val Loss: 0.640597 | LR: 1.88e-04
+  Epoch  17/20 | Train Loss: 0.390676 | Val Loss: 0.638815 | LR: 1.09e-04
+  Epoch  18/20 | Train Loss: 0.390305 | Val Loss: 0.637887 | LR: 4.92e-05
+  Epoch  19/20 | Train Loss: 0.390154 | Val Loss: 0.637576 | LR: 1.24e-05
+  Epoch  20/20 | Train Loss: 0.390015 | Val Loss: 0.637904 | LR: 4.52e-09
+  ID Test  MSE: 0.626525 | MAE: 0.612611
+  OOD Test MSE: 0.433844 | MAE: 0.484152
+  Robustness Gap (MSE): -0.192681
+
+  可视化已保存: ./output\ood_results.png
+
+报告已保存: ./output\experiment_report.md
+
+======================================================================
+  实验完成！
+======================================================================
+  输出目录: C:\Users\RedMoon\Desktop\0519\刘\CausalCIT_demo\output
+  可视化图片: ./output/*.png
+  实验报告: ./output/experiment_report.md
+PS C:\Users\RedMoon\Desktop\0519\刘\CausalCIT_demo> 
