@@ -26,8 +26,21 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DEMO_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), 'CausalCIT_demo')
-DATASET_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), 'patchtst', 'dataset')
+PROJECT_DIR = os.path.dirname(SCRIPT_DIR)  # CausalCIT/
+DEMO_DIR = os.path.join(PROJECT_DIR, 'CausalCIT_demo')
+
+# 数据集目录: 优先 patchtst/dataset/，回退到几个常见位置
+_DEFAULT_PATHS = [
+    os.path.join(PROJECT_DIR, 'patchtst', 'dataset'),
+    os.path.join(PROJECT_DIR, 'data'),
+    os.path.join(os.path.dirname(PROJECT_DIR), 'patchtst', 'dataset'),
+]
+DATASET_DIR = _DEFAULT_PATHS[0]
+for _dp in _DEFAULT_PATHS:
+    if os.path.isdir(_dp) and os.listdir(_dp):
+        DATASET_DIR = _dp
+        break
+
 sys.path.insert(0, DEMO_DIR)
 sys.path.insert(0, SCRIPT_DIR)
 
@@ -484,6 +497,22 @@ def parse_args():
     args = parser.parse_args()
     if args.dataset_dir is None:
         args.dataset_dir = DATASET_DIR
+
+    # 自动创建数据集目录
+    os.makedirs(args.dataset_dir, exist_ok=True)
+
+    # 检查真实数据是否存在
+    if args.exp in ['all', 'real']:
+        _missing = []
+        for _fn in ['ETTh1.csv']:
+            if not os.path.exists(os.path.join(args.dataset_dir, _fn)):
+                _missing.append(_fn)
+        if _missing:
+            print(f"\n  ⚠ 数据集缺失: {', '.join(_missing)}")
+            print(f"  存放位置: {args.dataset_dir}/")
+            print(f"  下载方式: cd {PROJECT_DIR} && python download_data.py")
+            print(f"  或手动放入后重新运行。合成数据消融实验不受影响。\n")
+
     return args
 
 

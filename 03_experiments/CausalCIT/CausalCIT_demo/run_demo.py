@@ -242,9 +242,16 @@ def run_real_experiment(args):
     print("=" * 70)
 
     data_path = args.data_path
+    # 如果默认路径不存在，尝试共享数据集目录
+    if not os.path.exists(data_path):
+        _alt_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                 'patchtst', 'dataset', 'ETTh1.csv')
+        if os.path.exists(_alt_path):
+            data_path = _alt_path
     if not os.path.exists(data_path):
         print(f"  ⚠ 数据文件不存在: {data_path}")
         print(f"  请将ETTh1.csv放到该路径，或用 --data_path 指定路径")
+        print(f"  下载: cd .. && python download_data.py --dataset ETTh1")
         return None
 
     device = args.device
@@ -562,7 +569,7 @@ def parse_args():
                         choices=['all', 'synthetic', 'real', 'ood'],
                         help='运行哪个实验')
     parser.add_argument('--use_real_data', action='store_true', help='是否使用真实数据')
-    parser.add_argument('--data_path', type=str, default='./data/ETTh1.csv')
+    parser.add_argument('--data_path', type=str, default=None, help='真实数据路径 (默认自动查找)')
     parser.add_argument('--output_dir', type=str, default='./output')
 
     # 模型参数
@@ -597,6 +604,19 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    # 自动查找真实数据路径
+    if args.data_path is None:
+        _candidates = [
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'patchtst', 'dataset', 'ETTh1.csv'),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'ETTh1.csv'),
+        ]
+        args.data_path = './data/ETTh1.csv'
+        for _c in _candidates:
+            if os.path.exists(_c):
+                args.data_path = _c
+                break
+
     os.makedirs(args.output_dir, exist_ok=True)
 
     print("=" * 70)

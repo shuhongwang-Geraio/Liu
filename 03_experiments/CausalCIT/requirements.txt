@@ -1,0 +1,12 @@
+# CausalCIT 完整依赖
+# 安装方式: pip install -r requirements.txt
+
+# 核心依赖
+numpy>=1.23.0,<2.0.0
+pandas>=1.5.0
+torch>=2.0.0
+matplotlib>=3.6.0
+scikit-learn>=1.2.0
+
+# 可选: GPU 加速 (如有 CUDA，建议手动安装对应版本)
+# pip install torch==2.x.x+cu118 --index-url https://download.pytorch.org/whl/cu118

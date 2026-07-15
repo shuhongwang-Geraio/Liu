@@ -1,3 +1,0 @@
-Error: arXiv API HTTP error: Redirect response '301 Moved Permanently' for url 'http://export.arxiv.org/api/query?search_query=multiscale+transformer+hierarchical+attention&max_results=20&sortBy=submittedDate&sortOrder=descending'
-Redirect location: 'https://export.arxiv.org/api/query?search_query=multiscale+transformer+hierarchical+attention&max_results=20&sortBy=submittedDate&sortOrder=descending'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/301

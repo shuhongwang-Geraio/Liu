@@ -1,0 +1,39 @@
+# CausalCIT - 忽略实验产出物
+
+# 模型权重 (太大，不入仓库)
+*.pth
+
+# 实验输出
+output/
+CausalCIT_demo/output/
+CausalCIT_exp_v2/output/
+CausalCIT_ablation/output/
+
+# 可视化图片
+*.png
+*.jpg
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# 数据集 (不入仓库)
+patchtst/dataset/*.csv
+CausalCIT_demo/data/*.csv
+data/*.csv
+
+# 虚拟环境
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
