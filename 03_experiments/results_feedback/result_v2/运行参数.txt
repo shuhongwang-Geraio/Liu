@@ -1,0 +1,7 @@
+运行时间: 2026-06-04 20:24:06 ~ 2026-06-04 21:00:03
+设备: cuda (GPU 0)
+实际总耗时: 35分57秒
+是否遇到报错: 无
+Python版本: Python 3.10.20
+PyTorch CUDA: True
+已完成步骤: v2_synthetic,v2_real,

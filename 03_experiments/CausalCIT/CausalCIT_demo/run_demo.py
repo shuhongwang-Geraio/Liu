@@ -610,6 +610,9 @@ def main():
         _candidates = [
             os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'patchtst', 'dataset', 'ETTh1.csv'),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'ETTh1.csv'),
+            # 新目录结构: 外部数据在 01_external/PatchTST/code/dataset/
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), '01_external', 'PatchTST', 'code', 'dataset', 'ETTh1.csv'),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), '01_external', 'PatchTST', 'code', 'dataset', 'ETTh1.csv'),
         ]
         args.data_path = './data/ETTh1.csv'
         for _c in _candidates:

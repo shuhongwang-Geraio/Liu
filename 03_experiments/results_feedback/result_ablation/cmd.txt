@@ -1,0 +1,335 @@
+========================================================================
+  CausalCIT 消融实验 (Ablation Study)
+========================================================================
+  设备: cuda
+  变体数: 5
+    - patchtst: PatchTST (no interaction)
+    - no_gate: w/o Gate (full attention)
+    - no_env: w/o EnvSplit (global HSIC)
+    - no_hsic: w/o HSIC (Pearson corr)
+    - full: Full CausalCIT (Ours)
+
+========================================================================
+  消融实验: 合成数据 (d_model=64, 50 epochs)
+========================================================================
+
+--- PatchTST (no interaction) ---
+  参数量: 225,646
+  Epoch   1/50 | Train Loss: 0.529603 | Val Loss: 0.455996 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.427211 | Val Loss: 0.445278 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.419131 | Val Loss: 0.442024 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.415431 | Val Loss: 0.442474 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.412796 | Val Loss: 0.445682 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.408755 | Val Loss: 0.452343 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.402577 | Val Loss: 0.434335 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.394913 | Val Loss: 0.417156 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.390377 | Val Loss: 0.413648 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.388582 | Val Loss: 0.415998 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.386661 | Val Loss: 0.413279 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.384395 | Val Loss: 0.416721 | LR: 9.09e-04
+  Epoch  13/50 | Train Loss: 0.382634 | Val Loss: 0.416186 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.380412 | Val Loss: 0.423436 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.377787 | Val Loss: 0.414728 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.375316 | Val Loss: 0.418456 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.372987 | Val Loss: 0.422437 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.369444 | Val Loss: 0.421391 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.366848 | Val Loss: 0.421137 | LR: 9.68e-04
+  Epoch  20/50 | Train Loss: 0.363473 | Val Loss: 0.425571 | LR: 9.50e-04
+  Epoch  21/50 | Train Loss: 0.360596 | Val Loss: 0.424363 | LR: 9.29e-04
+  Early stopping at epoch 21
+  MSE: 0.482741 | MAE: 0.526161 | Time: 25s
+
+--- w/o Gate (full attention) ---
+  参数量: 250,735
+  Epoch   1/50 | Train Loss: 0.483334 | Val Loss: 0.449280 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.412978 | Val Loss: 0.442025 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.408683 | Val Loss: 0.440243 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.406395 | Val Loss: 0.437115 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.403712 | Val Loss: 0.434555 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.399652 | Val Loss: 0.423466 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.392849 | Val Loss: 0.415391 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.388106 | Val Loss: 0.413928 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.383698 | Val Loss: 0.414895 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.379523 | Val Loss: 0.418379 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.374724 | Val Loss: 0.419085 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.369015 | Val Loss: 0.424070 | LR: 9.09e-04
+  Epoch  13/50 | Train Loss: 0.363123 | Val Loss: 0.429166 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.358227 | Val Loss: 0.436071 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.352768 | Val Loss: 0.434623 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.347539 | Val Loss: 0.438044 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.341636 | Val Loss: 0.437774 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.336213 | Val Loss: 0.446281 | LR: 9.82e-04
+  Early stopping at epoch 18
+  MSE: 0.495676 | MAE: 0.532914 | Time: 26s
+    门控矩阵已保存: gate_matrices/ablation_no_gate.npy
+
+--- w/o EnvSplit (global HSIC) ---
+  参数量: 250,833
+  Epoch   1/50 | Train Loss: 0.478449 | Val Loss: 0.449948 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.413546 | Val Loss: 0.444009 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.409278 | Val Loss: 0.440871 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.406779 | Val Loss: 0.437835 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.404199 | Val Loss: 0.436935 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.400832 | Val Loss: 0.433461 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.395757 | Val Loss: 0.420636 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.389540 | Val Loss: 0.416219 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.386733 | Val Loss: 0.414858 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.384912 | Val Loss: 0.417861 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.382359 | Val Loss: 0.417340 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.380550 | Val Loss: 0.414914 | LR: 9.09e-04
+  Epoch  13/50 | Train Loss: 0.377812 | Val Loss: 0.423013 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.374558 | Val Loss: 0.420786 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.372294 | Val Loss: 0.420716 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.368805 | Val Loss: 0.426824 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.364836 | Val Loss: 0.435505 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.360607 | Val Loss: 0.428717 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.355804 | Val Loss: 0.429460 | LR: 9.68e-04
+  Early stopping at epoch 19
+  MSE: 0.488840 | MAE: 0.529456 | Time: 31s
+    门控矩阵已保存: gate_matrices/ablation_no_env.npy
+
+--- w/o HSIC (Pearson corr) ---
+  参数量: 250,834
+  Epoch   1/50 | Train Loss: 0.481852 | Val Loss: 0.448908 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.413313 | Val Loss: 0.442582 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.408321 | Val Loss: 0.440180 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.405815 | Val Loss: 0.436982 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.403756 | Val Loss: 0.434555 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.401347 | Val Loss: 0.433542 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.396257 | Val Loss: 0.424568 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.391752 | Val Loss: 0.422805 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.387311 | Val Loss: 0.414906 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.383432 | Val Loss: 0.415665 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.379805 | Val Loss: 0.419111 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.376671 | Val Loss: 0.421726 | LR: 9.09e-04
+  Epoch  13/50 | Train Loss: 0.373597 | Val Loss: 0.418764 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.369820 | Val Loss: 0.425773 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.366216 | Val Loss: 0.425109 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.362665 | Val Loss: 0.426797 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.358883 | Val Loss: 0.427775 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.354905 | Val Loss: 0.429033 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.351386 | Val Loss: 0.432951 | LR: 9.68e-04
+  Early stopping at epoch 19
+  MSE: 0.488861 | MAE: 0.531066 | Time: 35s
+    门控矩阵已保存: gate_matrices/ablation_no_hsic.npy
+
+--- Full CausalCIT (Ours) ---
+  参数量: 250,834
+  Epoch   1/50 | Train Loss: 0.477742 | Val Loss: 0.449216 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.412931 | Val Loss: 0.442296 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.408647 | Val Loss: 0.440368 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.406231 | Val Loss: 0.438400 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.403741 | Val Loss: 0.436332 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.401060 | Val Loss: 0.431339 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.395845 | Val Loss: 0.426070 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.389371 | Val Loss: 0.417778 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.385796 | Val Loss: 0.420623 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.383982 | Val Loss: 0.414089 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.380726 | Val Loss: 0.411615 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.378336 | Val Loss: 0.416134 | LR: 9.09e-04
+  Epoch  13/50 | Train Loss: 0.376184 | Val Loss: 0.418612 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.373068 | Val Loss: 0.425221 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.369574 | Val Loss: 0.422036 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.366428 | Val Loss: 0.421453 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.363253 | Val Loss: 0.427607 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.359337 | Val Loss: 0.422142 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.355970 | Val Loss: 0.427903 | LR: 9.68e-04
+  Epoch  20/50 | Train Loss: 0.352044 | Val Loss: 0.432827 | LR: 9.50e-04
+  Epoch  21/50 | Train Loss: 0.348178 | Val Loss: 0.433598 | LR: 9.29e-04
+  Early stopping at epoch 21
+  MSE: 0.494368 | MAE: 0.532327 | Time: 37s
+    门控矩阵已保存: gate_matrices/ablation_full.npy
+
+  可视化已保存: ./output/ablation_synthetic.png
+
+  合成数据结果已保存: ./output/ablation_synthetic_results.npz
+
+  合成数据消融报告已保存: ./output/ablation_report_synthetic.md
+
+========================================================================
+  消融实验完成！
+========================================================================
+  输出目录: /home/wangsh/Main/刘/CausalCIT_ablation/output
+  合成数据报告: ./output/ablation_report_synthetic.md
+========================================================================
+  CausalCIT 消融实验 (Ablation Study)
+========================================================================
+  设备: cuda
+  变体数: 5
+    - patchtst: PatchTST (no interaction)
+    - no_gate: w/o Gate (full attention)
+    - no_env: w/o EnvSplit (global HSIC)
+    - no_hsic: w/o HSIC (Pearson corr)
+    - full: Full CausalCIT (Ours)
+
+========================================================================
+  消融实验: ETTh1 真实数据
+========================================================================
+
+  ▶ pred_len = 96
+  Epoch   1/30 | Train Loss: 0.526190 | Val Loss: 0.770461 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.409785 | Val Loss: 0.713245 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.381941 | Val Loss: 0.707072 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.371044 | Val Loss: 0.699873 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.364366 | Val Loss: 0.698528 | LR: 6.04e-04
+  Epoch   6/30 | Train Loss: 0.359101 | Val Loss: 0.694590 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.355646 | Val Loss: 0.697236 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.351329 | Val Loss: 0.702447 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.348505 | Val Loss: 0.699632 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.345935 | Val Loss: 0.713309 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.344229 | Val Loss: 0.694276 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.342034 | Val Loss: 0.707020 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.339467 | Val Loss: 0.692458 | LR: 9.13e-04
+  Epoch  14/30 | Train Loss: 0.338217 | Val Loss: 0.719857 | LR: 8.66e-04
+  Epoch  15/30 | Train Loss: 0.336694 | Val Loss: 0.695092 | LR: 8.12e-04
+  Epoch  16/30 | Train Loss: 0.334953 | Val Loss: 0.729198 | LR: 7.50e-04
+  Epoch  17/30 | Train Loss: 0.333169 | Val Loss: 0.729508 | LR: 6.82e-04
+  Epoch  18/30 | Train Loss: 0.332262 | Val Loss: 0.707946 | LR: 6.11e-04
+  Epoch  19/30 | Train Loss: 0.330799 | Val Loss: 0.731214 | LR: 5.37e-04
+  Epoch  20/30 | Train Loss: 0.330118 | Val Loss: 0.723664 | LR: 4.62e-04
+  Early stopping at epoch 20
+    PatchTST (no interaction)       MSE=0.377050  MAE=0.398783
+  Epoch   1/30 | Train Loss: 0.493290 | Val Loss: 0.824985 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.395977 | Val Loss: 0.716984 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.370823 | Val Loss: 0.705226 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.362683 | Val Loss: 0.699182 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.355237 | Val Loss: 0.689519 | LR: 6.04e-04
+  Epoch   6/30 | Train Loss: 0.349299 | Val Loss: 0.697383 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.344533 | Val Loss: 0.697534 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.341280 | Val Loss: 0.695941 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.338830 | Val Loss: 0.709294 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.336084 | Val Loss: 0.721375 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.334228 | Val Loss: 0.697913 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.331002 | Val Loss: 0.703673 | LR: 9.50e-04
+  Early stopping at epoch 12
+    w/o Gate (full attention)       MSE=0.378378  MAE=0.396959
+    门控矩阵已保存: gate_matrices/ablation_no_gate_etth1_pl96.npy
+  Epoch   1/30 | Train Loss: 0.483624 | Val Loss: 0.803158 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.392617 | Val Loss: 0.712938 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.371727 | Val Loss: 0.695778 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.364466 | Val Loss: 0.685829 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.359644 | Val Loss: 0.676197 | LR: 6.04e-04
+  Epoch   6/30 | Train Loss: 0.354511 | Val Loss: 0.687485 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.349945 | Val Loss: 0.687343 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.347081 | Val Loss: 0.690659 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.344069 | Val Loss: 0.710990 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.342409 | Val Loss: 0.696525 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.340261 | Val Loss: 0.690122 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.338791 | Val Loss: 0.712126 | LR: 9.50e-04
+  Early stopping at epoch 12
+    w/o EnvSplit (global HSIC)      MSE=0.381314  MAE=0.397239
+    门控矩阵已保存: gate_matrices/ablation_no_env_etth1_pl96.npy
+  Epoch   1/30 | Train Loss: 0.486031 | Val Loss: 0.807585 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.392809 | Val Loss: 0.714192 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.370494 | Val Loss: 0.693676 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.363381 | Val Loss: 0.701339 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.357819 | Val Loss: 0.695332 | LR: 6.04e-04
+  Epoch   6/30 | Train Loss: 0.353207 | Val Loss: 0.683183 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.349539 | Val Loss: 0.688898 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.346627 | Val Loss: 0.697187 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.343798 | Val Loss: 0.689812 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.341507 | Val Loss: 0.706986 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.338849 | Val Loss: 0.708898 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.336977 | Val Loss: 0.720658 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.335299 | Val Loss: 0.708822 | LR: 9.13e-04
+  Early stopping at epoch 13
+    w/o HSIC (Pearson corr)         MSE=0.380729  MAE=0.397439
+    门控矩阵已保存: gate_matrices/ablation_no_hsic_etth1_pl96.npy
+  Epoch   1/30 | Train Loss: 0.488788 | Val Loss: 0.811219 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.393766 | Val Loss: 0.710849 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.371382 | Val Loss: 0.695023 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.365041 | Val Loss: 0.690054 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.359666 | Val Loss: 0.691176 | LR: 6.04e-04
+  Epoch   6/30 | Train Loss: 0.355063 | Val Loss: 0.686914 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.351378 | Val Loss: 0.699276 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.347968 | Val Loss: 0.707300 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.344266 | Val Loss: 0.719664 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.341736 | Val Loss: 0.720479 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.339813 | Val Loss: 0.716373 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.337965 | Val Loss: 0.746265 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.335698 | Val Loss: 0.731703 | LR: 9.13e-04
+  Early stopping at epoch 13
+    Full CausalCIT (Ours)           MSE=0.379863  MAE=0.396639
+    门控矩阵已保存: gate_matrices/ablation_full_etth1_pl96.npy
+
+  ▶ pred_len = 336
+  Epoch   1/30 | Train Loss: 0.646569 | Val Loss: 1.361953 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.533697 | Val Loss: 1.300740 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.506467 | Val Loss: 1.294642 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.496278 | Val Loss: 1.302773 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.487545 | Val Loss: 1.319676 | LR: 6.04e-04
+  Epoch   6/30 | Train Loss: 0.478835 | Val Loss: 1.321532 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.472664 | Val Loss: 1.320243 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.466824 | Val Loss: 1.336834 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.462909 | Val Loss: 1.334851 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.458575 | Val Loss: 1.336400 | LR: 9.94e-04
+  Early stopping at epoch 10
+    PatchTST (no interaction)       MSE=0.477108  MAE=0.448774
+  Epoch   1/30 | Train Loss: 0.599859 | Val Loss: 1.387564 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.518308 | Val Loss: 1.305606 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.494277 | Val Loss: 1.294827 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.482784 | Val Loss: 1.308337 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.474005 | Val Loss: 1.319381 | LR: 6.04e-04
+  Epoch   6/30 | Train Loss: 0.465693 | Val Loss: 1.315116 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.457938 | Val Loss: 1.311597 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.452851 | Val Loss: 1.310842 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.447354 | Val Loss: 1.300276 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.442059 | Val Loss: 1.281787 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.436764 | Val Loss: 1.302518 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.432747 | Val Loss: 1.300443 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.427548 | Val Loss: 1.306611 | LR: 9.13e-04
+  Epoch  14/30 | Train Loss: 0.424353 | Val Loss: 1.303861 | LR: 8.66e-04
+  Epoch  15/30 | Train Loss: 0.419416 | Val Loss: 1.308568 | LR: 8.12e-04
+  Epoch  16/30 | Train Loss: 0.416090 | Val Loss: 1.315902 | LR: 7.50e-04
+  Epoch  17/30 | Train Loss: 0.413312 | Val Loss: 1.311567 | LR: 6.82e-04
+  Early stopping at epoch 17
+    w/o Gate (full attention)       MSE=0.465554  MAE=0.450602
+  Epoch   1/30 | Train Loss: 0.599926 | Val Loss: 1.380366 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.514083 | Val Loss: 1.306997 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.494248 | Val Loss: 1.300034 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.483996 | Val Loss: 1.299718 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.476757 | Val Loss: 1.315692 | LR: 6.04e-04
+  Epoch   6/30 | Train Loss: 0.471024 | Val Loss: 1.310234 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.465364 | Val Loss: 1.324133 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.460944 | Val Loss: 1.310764 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.456393 | Val Loss: 1.339697 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.452735 | Val Loss: 1.332467 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.449423 | Val Loss: 1.341519 | LR: 9.78e-04
+  Early stopping at epoch 11
+    w/o EnvSplit (global HSIC)      MSE=0.486039  MAE=0.458458
+  Epoch   1/30 | Train Loss: 0.595951 | Val Loss: 1.381043 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.515058 | Val Loss: 1.307870 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.495207 | Val Loss: 1.295505 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.485868 | Val Loss: 1.311779 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.477375 | Val Loss: 1.318025 | LR: 6.04e-04
+  Epoch   6/30 | Train Loss: 0.470458 | Val Loss: 1.348365 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.465016 | Val Loss: 1.366234 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.460734 | Val Loss: 1.367328 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.455297 | Val Loss: 1.370796 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.450829 | Val Loss: 1.381246 | LR: 9.94e-04
+  Early stopping at epoch 10
+    w/o HSIC (Pearson corr)         MSE=0.484203  MAE=0.452524
+  Epoch   1/30 | Train Loss: 0.597237 | Val Loss: 1.383478 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.517565 | Val Loss: 1.309965 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.495665 | Val Loss: 1.296178 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.485970 | Val Loss: 1.309923 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.479179 | Val Loss: 1.311654 | LR: 6.04e-04
+  Epoch   6/30 | Train Loss: 0.473730 | Val Loss: 1.320446 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.467847 | Val Loss: 1.351334 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.462912 | Val Loss: 1.369909 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.457196 | Val Loss: 1.403334 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.453095 | Val Loss: 1.385777 | LR: 9.94e-04
+  Early stopping at epoch 10
+    Full CausalCIT (Ours)           MSE=0.486507  MAE=0.452068
+
+  可视化已保存: ./output/ablation_etth1.png
+
+  真实数据结果已保存: ./output/ablation_real_results.npz
+
+  真实数据消融报告已保存: ./output/ablation_report_real.md
+
+========================================================================
+  消融实验完成！
+========================================================================
+  输出目录: /home/wangsh/Main/刘/CausalCIT_ablation/output
+  真实数据报告: ./output/ablation_report_real.md

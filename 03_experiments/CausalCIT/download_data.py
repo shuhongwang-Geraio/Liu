@@ -97,10 +97,17 @@ def main():
                         help='输出目录 (默认: ../patchtst/dataset)')
     args = parser.parse_args()
 
-    # 默认输出到 patchtst/dataset/
+    # 默认输出到 patchtst/dataset/，在新目录结构下回退到 01_external/PatchTST/code/dataset/
     if args.output is None:
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        args.output = os.path.join(script_dir, 'patchtst', 'dataset')
+        default_path = os.path.join(script_dir, 'patchtst', 'dataset')
+        # 如果默认路径不存在，尝试新目录结构下的数据集位置
+        if not os.path.isdir(default_path):
+            alt_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(script_dir))),
+                                    '01_external', 'PatchTST', 'code', 'dataset')
+            if os.path.isdir(alt_path):
+                default_path = alt_path
+        args.output = default_path
 
     os.makedirs(args.output, exist_ok=True)
 

@@ -40,6 +40,9 @@ _DEFAULT_PATHS = [
     os.path.join(PROJECT_DIR, 'patchtst', 'dataset'),
     os.path.join(PROJECT_DIR, 'data'),
     os.path.join(os.path.dirname(PROJECT_DIR), 'patchtst', 'dataset'),
+    # 新目录结构: 外部数据在 01_external/PatchTST/code/dataset/
+    os.path.join(os.path.dirname(os.path.dirname(PROJECT_DIR)), '01_external', 'PatchTST', 'code', 'dataset'),
+    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(PROJECT_DIR))), '01_external', 'PatchTST', 'code', 'dataset'),
 ]
 DATASET_DIR = _DEFAULT_PATHS[0]
 for _dp in _DEFAULT_PATHS:

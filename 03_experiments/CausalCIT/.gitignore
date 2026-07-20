@@ -1,27 +1,15 @@
-# CausalCIT - 忽略实验产出物
+# CausalCIT - 仅忽略大型数据集，实验结果保留上传
 
-# 模型权重 (太大，不入仓库)
-*.pth
-
-# 实验输出
-output/
-CausalCIT_demo/output/
-CausalCIT_exp_v2/output/
-CausalCIT_ablation/output/
-
-# 可视化图片
-*.png
-*.jpg
+# 数据集 (太大，通过 download_data.py 按需下载)
+# 注: 01_external/PatchTST/code/dataset/ 下的.csv 由其目录内 .gitignore 控制
+patchtst/dataset/*.csv
+CausalCIT_demo/data/*.csv
+data/*.csv
 
 # Python 缓存
 __pycache__/
 *.pyc
 *.pyo
-
-# 数据集 (不入仓库)
-patchtst/dataset/*.csv
-CausalCIT_demo/data/*.csv
-data/*.csv
 
 # 虚拟环境
 venv/
