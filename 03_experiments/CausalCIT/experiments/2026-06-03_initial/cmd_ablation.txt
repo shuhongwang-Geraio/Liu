@@ -1,0 +1,36 @@
+========================================================================
+  CausalCIT 消融实验 (Ablation Study)
+========================================================================
+  设备: cuda | 5 变体
+
+========================================================================
+  消融实验: 合成数据 (d_model=64, 50 epochs)
+========================================================================
+
+PatchTST (no interaction)    MSE=0.482741  MAE=0.526161  Params=225,646  Time=25s
+w/o Gate (full attention)    MSE=0.495676  MAE=0.532914  Params=250,735  Time=26s
+w/o EnvSplit (global HSIC)   MSE=0.488840  MAE=0.529456  Params=250,833  Time=31s
+w/o HSIC (Pearson corr)      MSE=0.488861  MAE=0.531066  Params=250,834  Time=35s
+Full CausalCIT (Ours)        MSE=0.494368  MAE=0.532327  Params=250,834  Time=37s
+
+========================================================================
+  消融实验: ETTh1 真实数据 (d_model=32, 30 epochs)
+========================================================================
+
+pred_len=96:
+  PatchTST (no interaction)    MSE=0.377050  MAE=0.398783
+  w/o Gate (full attention)    MSE=0.378378  MAE=0.396959
+  w/o EnvSplit (global HSIC)   MSE=0.381314  MAE=0.397239
+  w/o HSIC (Pearson corr)      MSE=0.380729  MAE=0.397439
+  Full CausalCIT (Ours)        MSE=0.379863  MAE=0.396639
+
+pred_len=336:
+  PatchTST (no interaction)    MSE=0.477108  MAE=0.448774
+  w/o Gate (full attention)    MSE=0.465554  MAE=0.450602   ← 最优! +2.42%
+  w/o EnvSplit (global HSIC)   MSE=0.486039  MAE=0.458458
+  w/o HSIC (Pearson corr)      MSE=0.484203  MAE=0.452524
+  Full CausalCIT (Ours)        MSE=0.486507  MAE=0.452068
+
+========================================================================
+  消融实验完成！
+========================================================================

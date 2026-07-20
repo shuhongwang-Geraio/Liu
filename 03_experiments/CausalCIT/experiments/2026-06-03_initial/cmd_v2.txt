@@ -1,0 +1,46 @@
+========================================================================
+  CausalCIT 增强实验 v2
+  Enhanced Experiments: Larger model + Real data benchmarks
+========================================================================
+  设备: cuda
+  数据集目录: /home/wangsh/Main/刘/patchtst/dataset
+  输出目录: /home/wangsh/Main/刘/CausalCIT_exp_v2/output
+
+========================================================================
+  实验1: 增强版合成数据 (d_model=64, epochs=50)
+========================================================================
+
+--- PatchTST (d_model=64, epochs=50) ---
+  参数量: 225,646
+  Epoch   1/50 | Train Loss: 0.523122 | Val Loss: 0.454343 | LR: 5.05e-05
+  ...
+  Early stopping at epoch 21
+  Test MSE: 0.484650 | MAE: 0.527967
+
+--- CausalCIT (d_model=64, epochs=50) ---
+  参数量: 250,834
+  ...
+  Early stopping at epoch 18
+  Test MSE: 0.494863 | MAE: 0.533836
+
+  ★ MSE改进: -2.11%
+
+========================================================================
+  实验2: 真实数据 (ETTh1 + Weather)
+========================================================================
+
+ETTh1 pred_len=96:  PatchTST 0.376778 / CausalCIT 0.376522 [Δ=+0.07%]
+ETTh1 pred_len=192: PatchTST 0.433666 / CausalCIT 0.432617 [Δ=+0.24%]
+ETTh1 pred_len=336: PatchTST 0.479444 / CausalCIT 0.481583 [Δ=-0.45%]
+ETTh1 pred_len=720: PatchTST 0.483291 / CausalCIT 0.495249 [Δ=-2.47%]
+
+Weather pred_len=96:  PatchTST 0.150826 / CausalCIT 0.151142 [Δ=-0.21%]
+Weather pred_len=192: PatchTST 0.192471 / CausalCIT 0.194612 [Δ=-1.11%]
+Weather pred_len=336: PatchTST 0.243092 / CausalCIT 0.247354 [Δ=-1.75%]
+Weather pred_len=720: PatchTST 0.306438 / CausalCIT 0.308457 [Δ=-0.66%]
+
+总实验数: 8, CausalCIT 胜: 0/8
+
+========================================================================
+  全部实验完成！
+========================================================================

@@ -1,0 +1,27 @@
+========== Python 环境 ==========
+Python 3.10.20
+
+========== Pytorch 信息 ==========
+PyTorch: 2.5.1+cu121
+CUDA: True
+GPU: NVIDIA GeForce RTX 4090
+
+========== pip 已安装包 ==========
+matplotlib               3.10.9
+numpy                    2.2.6
+pandas                   2.3.3
+torch                    2.5.1+cu121
+torchaudio               2.5.1+cu121
+torchvision              0.20.1+cu121
+
+========== 磁盘空间 ==========
+文件系统        大小  已用  可用 已用% 挂载点
+/dev/sda1       7.3T  277G  6.6T    4% /home
+
+========== 运行参数 ==========
+GPU_ID=0
+DEVICE=cuda
+SKIP_V2=false
+SKIP_ABL=false
+FORCE=true
+RESUME=false
