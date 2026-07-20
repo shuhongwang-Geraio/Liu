@@ -132,7 +132,11 @@ class CausalChannelAttention(nn.Module):
         V = self.W_V(x).view(bs, nvars, self.n_heads, self.d_k).transpose(1, 2)
         attn = (Q @ K.transpose(-2, -1)) * self.scale
         gate_mask = gate_matrix.unsqueeze(1)
-        attn = attn * gate_mask + (1 - gate_mask) * (-1e9)
+        # 软门控惩罚：log域加性偏置，而非硬mask的(1-g)*(-1e9)。
+        # 后者对任何 g<0.9999 都会把logit压到-1e8量级，softmax后权重≈0，
+        # 等价于把soft gate强行二值化。改为log(g)后，惩罚幅度与g平滑对应，
+        # g=0.5时惩罚≈-0.69，g=0.1时≈-2.3，量级与attn logits (~O(1~5)) 匹配。
+        attn = attn + torch.log(gate_mask.clamp(min=1e-4))
         attn = F.softmax(attn, dim=-1)
         attn = self.dropout(attn)
         out = (attn @ V).transpose(1, 2).contiguous().view(bs, nvars, d_model)
