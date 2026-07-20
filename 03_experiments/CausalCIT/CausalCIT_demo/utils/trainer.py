@@ -45,7 +45,13 @@ class Trainer:
         self.device = device
 
     def train(self, train_loader, val_loader, epochs=20, lr=0.001,
-              patience=5, save_dir='./checkpoints'):
+              patience=5, save_dir='./checkpoints', entropy_weight=0.0):
+        """
+        entropy_weight: P1优化 — 门控熵正则化系数 (默认0，不影响旧行为)。
+            若>0且模型实现了get_gate_entropy()，会在loss中加入
+            `entropy_weight * gate_entropy`，鼓励门控sigmoid输出远离0.5，
+            做出更果断的通道交互/隔离判断，避免门控长期停留在模糊区间。
+        """
         os.makedirs(save_dir, exist_ok=True)
         criterion = nn.MSELoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
@@ -54,6 +60,7 @@ class Trainer:
             steps_per_epoch=len(train_loader), epochs=epochs, pct_start=0.3
         )
         early_stopping = EarlyStopping(patience=patience)
+        supports_entropy = entropy_weight > 0 and hasattr(self.model, 'get_gate_entropy')
 
         train_losses, val_losses = [], []
         start_time = time.time()
@@ -67,6 +74,10 @@ class Trainer:
                 optimizer.zero_grad()
                 pred = self.model(batch_x)
                 loss = criterion(pred, batch_y)
+                if supports_entropy:
+                    gate_entropy = self.model.get_gate_entropy()
+                    if gate_entropy is not None:
+                        loss = loss + entropy_weight * gate_entropy
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
                 optimizer.step()

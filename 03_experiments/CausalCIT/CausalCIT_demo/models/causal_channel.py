@@ -45,20 +45,29 @@ class CausalStabilityGate(nn.Module):
     不稳定的通道依赖（虚假相关）→ 低门控权重 → 保持通道独立
     """
     def __init__(self, n_vars, d_model, n_envs=4, rff_dim=32,
-                 stability_threshold=0.1, temperature=1.0):
+                 stability_threshold=0.1, temperature=1.0, learn_temperature=True):
         super().__init__()
         self.n_vars = n_vars
         self.d_model = d_model
         self.n_envs = n_envs
         self.rff_dim = rff_dim
-        self.temperature = temperature
         self.rff_kernel = RFFKernel(d_model, rff_dim)
         self.stability_bias = nn.Parameter(torch.zeros(1))
         self.channel_prior = nn.Parameter(torch.zeros(n_vars, n_vars))
+        # gate_mlp 输出原始logit（不再内置Sigmoid），配合可学习温度缩放后再做sigmoid。
+        # P1优化(温度): T越小 -> sigmoid(logit/T)越陡峭，门控趋向果断的0/1判断；
+        #              T越大 -> 门控越平滑保守。初始T=temperature，训练中自适应调节。
         self.gate_mlp = nn.Sequential(
             nn.Linear(1, 16), nn.GELU(),
-            nn.Linear(16, 1), nn.Sigmoid()
+            nn.Linear(16, 1)
         )
+        if learn_temperature:
+            self.temperature_param = nn.Parameter(torch.tensor(float(temperature)))
+        else:
+            self.register_buffer('temperature_param', torch.tensor(float(temperature)))
+        # P1优化(熵正则化): 记录最近一次forward的门控熵（不含对角线），
+        # 供Trainer作为辅助loss加入，鼓励gate远离0.5附近的模糊区间，做出更果断的选择。
+        self.last_entropy = None
 
     def compute_stability_score(self, x):
         """计算通道对的跨环境稳定性分数
@@ -97,9 +106,19 @@ class CausalStabilityGate(nn.Module):
         stability = self.compute_stability_score(x)
         prior = torch.sigmoid(self.channel_prior)
         stability = stability * 0.7 + prior.unsqueeze(0) * 0.3
-        gate = self.gate_mlp(stability.unsqueeze(-1)).squeeze(-1)
+        logit = self.gate_mlp(stability.unsqueeze(-1)).squeeze(-1)
+        # 温度缩放：clamp防止T退化为0/负数导致数值爆炸或方向反转
+        temp = self.temperature_param.clamp(min=0.1, max=10.0)
+        gate = torch.sigmoid(logit / temp)
         eye = torch.eye(self.n_vars, device=x.device).unsqueeze(0)
         gate = gate * (1 - eye) + eye
+
+        # 熵正则化统计：只统计非对角线（真实待判断的通道对），
+        # 越靠近0.5熵越大(模糊)，越靠近0/1熵越小(果断)。
+        off_diag_mask = (1 - eye).bool().expand_as(gate)
+        p = gate[off_diag_mask].clamp(min=1e-6, max=1 - 1e-6)
+        ent = -(p * torch.log(p) + (1 - p) * torch.log(1 - p))
+        self.last_entropy = ent.mean()
         return gate
 
 
@@ -184,3 +203,7 @@ class CausalChannelInteraction(nn.Module):
         alpha = torch.sigmoid(self.alpha)
         out = (1 - alpha) * x + alpha * x_channel_expand
         return out, gate_matrix
+
+    def get_last_entropy(self):
+        """返回最近一次forward的门控熵（标量tensor或None），供上层作为正则项使用"""
+        return self.stability_gate.last_entropy

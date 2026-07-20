@@ -105,6 +105,10 @@ class CausalCIT_backbone(nn.Module):
     def get_gate_matrix(self):
         return self.last_gate_matrix
 
+    def get_gate_entropy(self):
+        """P1优化: 门控熵，供Trainer作为辅助正则项，鼓励gate做出果断的0/1选择"""
+        return self.causal_channel.get_last_entropy()
+
 
 class CausalCIT(nn.Module):
     """CausalCIT完整模型"""
@@ -155,3 +159,9 @@ class CausalCIT(nn.Module):
         if self.decomposition:
             return self.model_res.get_gate_matrix()
         return self.model.get_gate_matrix()
+
+    def get_gate_entropy(self):
+        """P1优化: 供Trainer读取门控熵，用于熵正则化loss"""
+        if self.decomposition:
+            return self.model_res.get_gate_entropy()
+        return self.model.get_gate_entropy()

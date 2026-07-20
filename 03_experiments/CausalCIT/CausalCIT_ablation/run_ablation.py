@@ -70,6 +70,18 @@ COLORS = {
 }
 
 
+def set_seed(seed):
+    """固定随机种子：保证不同变体在相同初始化/相同DataLoader shuffle顺序下对比，
+    否则消融实验的差异会被"训练随机性噪声"淹没（历史上曾出现同一变体两次跑出
+    +5.51% vs -0.99%这种反直觉波动，根源就是没有固定种子）。"""
+    import random
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
 def count_params(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -115,6 +127,7 @@ def run_synthetic_ablation(args):
     for variant_key, variant_label in VARIANTS:
         label_short = variant_label.replace('\n', ' ')
         print(f"\n--- {label_short} ---")
+        set_seed(args.seed)  # 每个变体训练前重置种子，保证初始化/shuffle顺序一致，公平对比
         model = create_ablation_model(variant_key, **common_kwargs)
         params = count_params(model)
         print(f"  参数量: {params:,}")
@@ -322,6 +335,7 @@ def run_real_ablation(args):
         pl_results = {}
         for variant_key, variant_label in VARIANTS:
             label_short = variant_label.replace('\n', ' ')
+            set_seed(args.seed)  # 每个变体训练前重置种子，保证初始化/shuffle顺序一致，公平对比
             model = create_ablation_model(variant_key, **common_kwargs)
             trainer = Trainer(model, device=device)
             save_dir = os.path.join(args.output_dir, f'ckpt_etth1_{variant_key}_pl{pred_len}')
@@ -497,6 +511,8 @@ def parse_args():
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--device', type=str,
                         default='cuda' if torch.cuda.is_available() else 'cpu')
+    parser.add_argument('--seed', type=int, default=42,
+                        help='全局随机种子，每个消融变体训练前都会重置，保证公平对比')
     args = parser.parse_args()
     if args.dataset_dir is None:
         args.dataset_dir = DATASET_DIR
