@@ -47,7 +47,8 @@ class CausalStabilityGate(nn.Module):
     def __init__(self, n_vars, d_model, n_envs=4, rff_dim=32,
                  stability_threshold=0.1, temperature=1.0, learn_temperature=True,
                  prior_weight: float = 0.3, stability_v2: bool = False,
-                 prior_only: bool = False):
+                 prior_only: bool = False,
+                 running_stats: bool = False, running_momentum: float = 0.1):
         super().__init__()
         self.n_vars = n_vars
         self.d_model = d_model
@@ -56,6 +57,19 @@ class CausalStabilityGate(nn.Module):
         self.prior_weight = prior_weight
         self.stability_v2 = stability_v2
         self.prior_only = prior_only
+        # 修复(回应评审 re2 §2.2): stability_v2 把 batch 维一起池化估 HSIC，
+        # 若测试时直接用当前 batch 的 hsic_mean/std，同一个测试样本换一批"同伴"
+        # 门控矩阵就会变 —— 预测结果依赖 batch 组成，这在部署/复现上是硬伤。
+        # running_stats=True 时采用 BatchNorm 式做法：训练阶段用当前 batch 统计量
+        # 更新一份 EMA 全局统计量(population estimate)，推理(eval)阶段只用这份
+        # 与 batch 组成无关的全局统计量计算门控，从根本上解耦"测试预测 vs 测试batch组成"。
+        # 默认 False，保证不改变已有 full_v2 结果的可复现性；新实验建议开启并与旧版对照。
+        self.running_stats = running_stats
+        self.running_momentum = running_momentum
+        if running_stats:
+            self.register_buffer('running_hsic_mean', torch.zeros(n_vars, n_vars))
+            self.register_buffer('running_hsic_std', torch.zeros(n_vars, n_vars))
+            self.register_buffer('num_batches_tracked', torch.tensor(0, dtype=torch.long))
         self.rff_kernel = RFFKernel(d_model, rff_dim)
         self.stability_bias = nn.Parameter(torch.zeros(1))
         self.channel_prior = nn.Parameter(torch.zeros(n_vars, n_vars))
@@ -141,6 +155,24 @@ class CausalStabilityGate(nn.Module):
             hsic[e] = (Ke @ Ke.T) / P                          # [C, C]
         hsic_mean = hsic.mean(dim=0)                        # [C,C] 依赖强度
         hsic_std = hsic.std(dim=0)
+        if self.running_stats:
+            if self.training:
+                with torch.no_grad():
+                    if self.num_batches_tracked == 0:
+                        # 首个batch直接初始化，避免EMA从全零慢慢爬升
+                        self.running_hsic_mean.copy_(hsic_mean.detach())
+                        self.running_hsic_std.copy_(hsic_std.detach())
+                    else:
+                        mom = self.running_momentum
+                        self.running_hsic_mean.mul_(1 - mom).add_(mom * hsic_mean.detach())
+                        self.running_hsic_std.mul_(1 - mom).add_(mom * hsic_std.detach())
+                    self.num_batches_tracked += 1
+                # 训练阶段仍用当前batch统计量计算门控（梯度来源不变），
+                # 只是"顺带"把这一batch的统计量汇入全局EMA供eval使用。
+            elif self.num_batches_tracked > 0:
+                # 推理阶段：只用训练期累积的全局统计量，与当前测试batch组成无关。
+                hsic_mean = self.running_hsic_mean
+                hsic_std = self.running_hsic_std
         cv = hsic_std / (hsic_mean + 1e-6)
         stability = hsic_mean / (1.0 + cv + self.stability_bias.abs())
         return stability.unsqueeze(0).expand(bs, nvars, nvars)
@@ -317,7 +349,7 @@ class CausalChannelInteraction(nn.Module):
                  rff_dim=32, dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3,
                  temporal_mix: bool = False, temperature: float = 1.0,
                  stability_v2: bool = False, per_channel_alpha: bool = False,
-                 alpha_init: float = None):
+                 alpha_init: float = None, running_stats: bool = False):
         super().__init__()
         self.n_vars = n_vars
         self.d_model = d_model
@@ -329,7 +361,7 @@ class CausalChannelInteraction(nn.Module):
         self.stability_gate = CausalStabilityGate(
             n_vars=n_vars, d_model=d_model, n_envs=n_envs, rff_dim=rff_dim,
             prior_weight=prior_weight, temperature=temperature,
-            stability_v2=stability_v2,
+            stability_v2=stability_v2, running_stats=running_stats,
         )
         if temporal_mix:
             self.channel_attn = CausalChannelAttentionTemporal(

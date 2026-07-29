@@ -526,12 +526,17 @@ class AblationModel(nn.Module):
 def create_ablation_model(variant, **kwargs):
     """
     variant:
-        'full'     — 完整CausalCIT (A+B+C)
-        'full_fix' — 完整CausalCIT, 降低先验权重(prior_weight=0.1), 用于诊断先验主导假设
-        'no_hsic'  — 去掉HSIC，用Pearson相关性
-        'no_env'   — 去掉环境划分，全局HSIC
-        'no_gate'  — 去掉门控，全连接通道注意力
-        'patchtst' — 纯PatchTST (无通道交互)
+        'full'          — 完整CausalCIT (A+B+C)
+        'full_fix'      — 完整CausalCIT, 降低先验权重(prior_weight=0.1), 用于诊断先验主导假设
+        'full_v2'       — SOTA改进版 (temporal_mix + stability_v2 batch池化门控 + per_channel_alpha)
+        'full_v2_fixed' — full_v2 + running_stats修复(门控不再依赖测试batch组成), 用于A/B对照
+        'no_hsic'       — 去掉HSIC，用Pearson相关性
+        'no_env'        — 去掉环境划分，全局HSIC
+        'no_gate'       — 去掉门控，全连接通道注意力
+        'learned_gate'  — 与'capacity_match'实现完全相同(见下方注释), 不要重复计入统计检验
+        'gate_prior_only' — 与full_v2门控结构相同但剥离HSIC/稳定性信号的诊断对照
+        'capacity_match'  — 与full_v2容量匹配的纯学习门控对照(无因果/稳定性逻辑)
+        'patchtst'      — 纯PatchTST (无通道交互)
     """
     if variant == 'full':
         return CausalCIT(**kwargs)
@@ -542,11 +547,26 @@ def create_ablation_model(variant, **kwargs):
         #             + 低先验权重 + 温度锐化门控
         v2 = {k: v for k, v in kwargs.items()
               if k not in ('prior_weight', 'temperature', 'temporal_mix', 'stability_v2',
-                           'per_channel_alpha', 'alpha_init')}
+                           'per_channel_alpha', 'alpha_init', 'running_stats')}
         return CausalCIT(prior_weight=kwargs.get('prior_weight', 0.05),
                          temperature=kwargs.get('temperature', 0.5),
                          temporal_mix=True, stability_v2=True,
                          per_channel_alpha=True, alpha_init=kwargs.get('alpha_init', -2.0),
+                         running_stats=kwargs.get('running_stats', False),
+                         **v2)
+    elif variant == 'full_v2_fixed':
+        # 回应评审 re2 §2.2/§6.1: 与 full_v2 完全一致，唯一区别是
+        # stability_v2 门控改用 running_stats (BatchNorm式EMA population统计量)，
+        # 消除"测试预测依赖测试batch组成"的问题。用于在同一协议下与 full_v2 直接对照，
+        # 判断该bug修复前后 MSE/门控行为是否发生实质变化。
+        v2 = {k: v for k, v in kwargs.items()
+              if k not in ('prior_weight', 'temperature', 'temporal_mix', 'stability_v2',
+                           'per_channel_alpha', 'alpha_init', 'running_stats')}
+        return CausalCIT(prior_weight=kwargs.get('prior_weight', 0.05),
+                         temperature=kwargs.get('temperature', 0.5),
+                         temporal_mix=True, stability_v2=True,
+                         per_channel_alpha=True, alpha_init=kwargs.get('alpha_init', -2.0),
+                         running_stats=True,
                          **v2)
     elif variant == 'no_hsic':
         return AblationModel(NoHSIC_ChannelInteraction, **kwargs)
@@ -555,8 +575,10 @@ def create_ablation_model(variant, **kwargs):
     elif variant == 'no_gate':
         return AblationModel(NoGate_ChannelInteraction, **kwargs)
     elif variant == 'learned_gate':
-        # 容量匹配对照: 参数规模同 full_v2 (含 N×N 可学习门控 channel_prior),
-        # 但门控由纯学习矩阵决定, 不经任何因果/稳定性(HSIC)逻辑.
+        # 注意(回应评审re2 §2.4): 'learned_gate' 与下面的 'capacity_match' 是
+        # 完全相同的实现 (同一个类 LearnedGate_ChannelInteraction, 同样的kwargs)，
+        # 两者不构成两条独立证据。报告/统计检验中不要把它们当作两个不同的对照组
+        # 重复计入 —— 只保留其中一个(建议用语义更明确的 'capacity_match')。
         return AblationModel(LearnedGate_ChannelInteraction,
                              **{k: v for k, v in kwargs.items()})
     elif variant == 'gate_prior_only':
@@ -569,6 +591,7 @@ def create_ablation_model(variant, **kwargs):
     elif variant == 'capacity_match':
         # 容量匹配对照 (回应评审刀2): 与 full_v2 同参数规模的标准通道注意力,
         # 门控由纯学习矩阵决定, 不经任何因果/稳定性(HSIC)逻辑。
+        # (与 'learned_gate' 实现完全相同，见上方注释 —— 只是这里是本方法族的"正式"命名)
         return AblationModel(LearnedGate_ChannelInteraction,
                              **{k: v for k, v in kwargs.items()})
     elif variant == 'patchtst':

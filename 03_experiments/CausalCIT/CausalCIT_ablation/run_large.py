@@ -132,7 +132,7 @@ FULL_V2_KWARGS = dict(prior_weight=0.05, temperature=0.5,
                        alpha_init=-2.0)
 
 
-def build_kwargs(ds, pl, variant, seed, dataset_dir):
+def build_kwargs(ds, pl, variant, seed, dataset_dir, entropy_weight=0.0):
     cfg = dataset_config(ds)
     n_vars = cfg['n_vars']
     seq_len = seq_for_pl(pl)
@@ -149,8 +149,14 @@ def build_kwargs(ds, pl, variant, seed, dataset_dir):
         n_vars=n_vars, epochs=cfg['epochs'], patience=cfg['patience'],
         batch_size=cfg['batch_size'], dataset_dir=dataset_dir,
         model_kwargs=base,
+        # 回应评审re2 §2.3/§6.1: entropy_weight 之前从未被传给 trainer.train()，
+        # 一直是死代码。这里显式写进 job，由 _train_one/_train_syn_ood 传下去。
+        # 默认 0.0，不影响旧结果的可复现性；测试该正则化效果时用 --entropy_weight>0。
+        entropy_weight=entropy_weight,
     )
     if variant == 'full_v2':
+        base.update(FULL_V2_KWARGS)
+    elif variant == 'full_v2_fixed':
         base.update(FULL_V2_KWARGS)
     elif variant in ('learned_gate', 'capacity_match'):
         # 容量匹配对照(回应评审刀2): 与 full_v2 同参数规模(含 N×N 门控), 但无因果稳定性逻辑
@@ -190,13 +196,14 @@ def gen_jobs(args):
     dataset_dir = resolve_dataset_dir(args.dataset_dir)
     variants = args.variants
     seeds = [int(s) for s in args.seeds]
+    ew = getattr(args, 'entropy_weight', 0.0)
     jobs = []
     for ds in args.datasets:
         cfg = dataset_config(ds)
         for pl in cfg['pred_lens']:
             for v in variants:
                 for s in seeds:
-                    jobs.append(build_kwargs(ds, pl, v, s, dataset_dir))
+                    jobs.append(build_kwargs(ds, pl, v, s, dataset_dir, entropy_weight=ew))
     # 贪心装箱: 按代价降序分配到当前总代价最小的 shard (保证各 shard 总代价均衡)
     jobs_sorted = sorted(jobs, key=est_cost, reverse=True)
     shards = [[] for _ in range(args.num_shards)]
@@ -263,11 +270,12 @@ def _train_one(job, device, out_dir):
     trainer = Trainer(model, device=device)
     save_dir = os.path.join(out_dir, 'ckpt', f"{ds}_pl{pl}_{variant}_s{job['seed']}")
     hist = trainer.train(train_loader, val_loader, epochs=job['epochs'],
-                         lr=0.001, patience=job['patience'], save_dir=save_dir)
+                         lr=0.001, patience=job['patience'], save_dir=save_dir,
+                         entropy_weight=job.get('entropy_weight', 0.0))
     res = trainer.test(test_loader)
     # 小数据集保存门控矩阵 (用于分析)
     try:
-        if hasattr(model, 'get_gate_matrix') and cfg['n_vars'] <= 21 and variant in ('full_v2',):
+        if hasattr(model, 'get_gate_matrix') and cfg['n_vars'] <= 21 and variant in ('full_v2', 'full_v2_fixed'):
             gm = model.get_gate_matrix()
             if gm is not None:
                 gdir = os.path.join(out_dir, 'gates')
@@ -322,10 +330,11 @@ def _train_syn_ood(job, device, out_dir):
     trainer = Trainer(model, device=device)
     save_dir = os.path.join(out_dir, 'ckpt', f"{ds}_pl{pl}_{variant}_s{seed}")
     hist = trainer.train(train_loader, val_loader, epochs=job['epochs'],
-                         lr=0.001, patience=job['patience'], save_dir=save_dir)
+                         lr=0.001, patience=job['patience'], save_dir=save_dir,
+                         entropy_weight=job.get('entropy_weight', 0.0))
     res = trainer.test(test_loader)
     try:
-        if hasattr(model, 'get_gate_matrix') and cfg['n_vars'] <= 21 and variant in ('full_v2', 'learned_gate', 'gate_prior_only', 'capacity_match', 'no_env'):
+        if hasattr(model, 'get_gate_matrix') and cfg['n_vars'] <= 21 and variant in ('full_v2', 'full_v2_fixed', 'learned_gate', 'gate_prior_only', 'capacity_match', 'no_env'):
             gm = model.get_gate_matrix()
             if gm is not None:
                 gdir = os.path.join(out_dir, 'gates')
@@ -545,6 +554,40 @@ def summarize(args):
                              f"{imp_str} | {n_seed} | {p_str} | {ph_str} | {sig} |")
             lines.append("")
 
+            # 回应评审re2 §6.1第5条: 之前只做了 vs-PatchTST 的显著性检验，
+            # capacity_match/gate_prior_only 这两个"关键对照"(证明提升不是单纯参数量
+            # 或纯学习门控带来的)从未真正被检验过。这里单独起一个 Holm 校正族:
+            # full_v2 vs {capacity_match, gate_prior_only, no_env, full_v2_fixed}。
+            # 注意: 'learned_gate' 与 'capacity_match' 实现完全相同(见 models_ablation.py
+            # 注释), 故不重复纳入此族, 避免虚增比较数/重复计数同一条证据。
+            key_targets = [v for v in ('capacity_match', 'gate_prior_only', 'no_env', 'full_v2_fixed')
+                          if v in variants and v != 'full_v2']
+            fv = sub[sub.variant == 'full_v2']
+            if not fv.empty and key_targets:
+                lines.append("**关键对照显著性 (full_v2 vs 容量匹配/去因果信号对照, 非vs-PatchTST):**")
+                lines.append("")
+                lines.append("| 对照变体 | full_v2 MSE mean | 对照 MSE mean | full_v2提升% | #seed | Wilcoxon p | Holm p | 显著 |")
+                lines.append("|---------|-------------------|---------------|-------------|-------|-----------|--------|------|")
+                kc = []
+                for v in key_targets:
+                    sv = sub[sub.variant == v]
+                    if sv.empty:
+                        continue
+                    p_w, n_pair = _wilcoxon_paired(sv, fv)  # base=对照, var=full_v2
+                    fvm = fv['mse'].mean()
+                    svm = sv['mse'].mean()
+                    imp = (svm - fvm) / svm * 100 if svm > 0 else float('nan')
+                    kc.append([v, fvm, svm, imp, n_pair, p_w])
+                holm_kc = _holm_adjust([r[5] for r in kc])
+                for r, ph in zip(kc, holm_kc):
+                    v, fvm, svm, imp, n_pair, p_w = r
+                    p_str = f"{p_w:.4f}" if not np.isnan(p_w) else "-"
+                    ph_str = f"{ph:.4f}" if not np.isnan(ph) else "-"
+                    sig = "*" if (not np.isnan(ph) and ph < 0.05) else ""
+                    lines.append(f"| {v} | {fvm:.6f} | {svm:.6f} | {imp:+.2f}% | {n_pair} | "
+                                 f"{p_str} | {ph_str} | {sig} |")
+                lines.append("")
+
     lines.append("---")
     lines.append("")
     lines.append("## full_v2 提升率汇总 (vs PatchTST, seed 配对)")
@@ -662,6 +705,8 @@ def parse_args():
     g.add_argument('--num_shards', type=int, default=3)
     g.add_argument('--output_dir', default='./output_large')
     g.add_argument('--dataset_dir', default=None)
+    g.add_argument('--entropy_weight', type=float, default=0.0,
+                   help='门控熵正则化系数(回应评审re2 §2.3, 默认0=旧行为不变)')
 
     r = sub.add_parser('run')
     r.add_argument('--device', default='cuda:0')

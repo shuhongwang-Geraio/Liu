@@ -38,7 +38,7 @@ class CausalCIT_backbone(nn.Module):
                  channel_dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3,
                  temporal_mix: bool = False, temperature: float = 1.0,
                  stability_v2: bool = False, per_channel_alpha: bool = False,
-                 alpha_init: float = None, **kwargs):
+                 alpha_init: float = None, running_stats: bool = False, **kwargs):
         super().__init__()
 
         # RevIN
@@ -75,7 +75,7 @@ class CausalCIT_backbone(nn.Module):
             dropout=channel_dropout, fusion_alpha=fusion_alpha,
             prior_weight=prior_weight,
             temporal_mix=temporal_mix, temperature=temperature,
-            stability_v2=stability_v2,
+            stability_v2=stability_v2, running_stats=running_stats,
             per_channel_alpha=per_channel_alpha, alpha_init=alpha_init,
         )
 
@@ -134,7 +134,7 @@ class CausalCIT(nn.Module):
                  channel_dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3,
                  temporal_mix: bool = False, temperature: float = 1.0,
                  stability_v2: bool = False, per_channel_alpha: bool = False,
-                 alpha_init: float = None, **kwargs):
+                 alpha_init: float = None, running_stats: bool = False, **kwargs):
         super().__init__()
         self.decomposition = decomposition
         backbone_kwargs = dict(
@@ -148,7 +148,7 @@ class CausalCIT(nn.Module):
             channel_dropout=channel_dropout, fusion_alpha=fusion_alpha,
             prior_weight=prior_weight,
             temporal_mix=temporal_mix, temperature=temperature,
-            stability_v2=stability_v2,
+            stability_v2=stability_v2, running_stats=running_stats,
             per_channel_alpha=per_channel_alpha, alpha_init=alpha_init,
         )
         if decomposition:
