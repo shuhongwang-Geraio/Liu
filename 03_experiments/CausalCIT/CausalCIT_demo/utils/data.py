@@ -74,6 +74,65 @@ class ETTDataset(Dataset):
         return self.scaler.inverse_transform(data)
 
 
+class TemporalOODDataset(Dataset):
+    """真实数据时序漂移 OOD: 训练用早期时段, 测试用晚期时段, 中间留 gap 最大化分布漂移.
+
+    与 ETTDataset 的区别: 不按 7:1:2 紧挨切分, 而是 train=[0, train_frac],
+    val 紧接 train 之后, test=[1-test_frac, n], 二者之间留一段 *未使用* 的 gap
+    区域 (真实世界后期分布), 从而显式构造 "训练期 -> 测试期" 的时序分布漂移.
+    归一化仍只用训练统计量, 以暴露漂移 (标准 OOD 协议).
+    """
+
+    def __init__(self, data_path, seq_len=96, pred_len=96, flag='train',
+                 scale=True, freq='h', train_frac=0.5, val_frac=0.1,
+                 test_frac=0.25, gap_frac=0.15):
+        self.seq_len = seq_len
+        self.pred_len = pred_len
+        self.scale = scale
+
+        df = pd.read_csv(data_path)
+        cols = df.columns[1:]  # 去掉date列
+        df_data = df[cols].values.astype(np.float32)
+
+        n = len(df_data)
+        train_end = int(n * train_frac)
+        test_start = n - int(n * test_frac)
+        val_len = int(n * val_frac)
+        val_start = train_end
+        val_end = min(train_end + val_len, test_start - int(n * gap_frac))
+
+        type_map = {'train': 0, 'val': 1, 'test': 2}
+        self.set_type = type_map[flag]
+        border1s = [0, val_start, test_start]
+        border2s = [train_end, val_end, n]
+        border1 = border1s[self.set_type]
+        border2 = min(border2s[self.set_type], n)
+
+        # 标准化（只用训练集统计量）
+        self.scaler = StandardScaler()
+        if scale:
+            train_data = df_data[border1s[0]:border2s[0]]
+            self.scaler.fit(train_data)
+            df_data = self.scaler.transform(df_data)
+
+        self.data = df_data[border1:border2]
+
+    def __len__(self):
+        return len(self.data) - self.seq_len - self.pred_len + 1
+
+    def __getitem__(self, index):
+        s_begin = index
+        s_end = s_begin + self.seq_len
+        r_end = s_end + self.pred_len
+        seq_x = self.data[s_begin:s_end]
+        seq_y = self.data[s_end:r_end]
+        return (torch.tensor(seq_x, dtype=torch.float32),
+                torch.tensor(seq_y, dtype=torch.float32))
+
+    def inverse_transform(self, data):
+        return self.scaler.inverse_transform(data)
+
+
 class SyntheticCausalDataset(Dataset):
     """合成数据集：含真实因果通道和虚假相关通道
 
@@ -160,6 +219,89 @@ class SyntheticCausalDataset(Dataset):
         seq_y = self.data[s_end:r_end]
         return (torch.tensor(seq_x, dtype=torch.float32),
                 torch.tensor(seq_y, dtype=torch.float32))
+
+
+class SyntheticOODDataset(Dataset):
+    """受控 OOD 合成数据 (IRM 风格): 验证因果稳定性门控在分布漂移下的鲁棒性.
+
+    机制:
+      - Ch0: AR 基础信号
+      - Ch1, Ch2: 稳定因果 (跨时间/环境不变) -> 不变预测子依据
+      - Ch3: 虚假相关, 与 Ch0 的相关 *强度随数据环境变化* (同号不同强度).
+             因此跨随机环境 HSIC 稳定性低 -> 因果门控应下压该边;
+             纯容量模型 (learned_gate) 拟合边际相关并过拟合训练环境.
+      - Ch4: 受隐变量 confound
+      - Ch5, Ch6: 独立噪声
+    分布漂移: regime='train' 用训练强度集, regime='test' 用漂移(弱化/反转)强度集.
+    归一化: 始终用 train 统计量, 以暴露分布漂移 (标准 OOD 协议).
+    """
+
+    def __init__(self, n_samples=10000, seq_len=96, pred_len=96, flag='train',
+                 n_vars=7, seed=42, regime='train',
+                 spurious_strengths=(0.8, 0.5, 0.3, 0.6),
+                 test_spurious_strengths=(0.05, -0.2, 0.1, -0.05),
+                 train_noise=0.1, test_noise=0.1, n_data_envs=4):
+        super().__init__()
+        self.seq_len = seq_len
+        self.pred_len = pred_len
+        self.n_vars = 7  # 固定 7 维合成
+        self.regime = regime
+        # 参考 train 统计量 (用于全 split 统一归一化)
+        ref = self._generate('train', seed, spurious_strengths, train_noise,
+                             n_data_envs, n_samples, seq_len, pred_len)
+        self.mean = ref.mean(axis=0)
+        self.std = ref.std(axis=0) + 1e-8
+        # 生成本实例数据
+        strengths = spurious_strengths if regime == 'train' else test_spurious_strengths
+        noise = train_noise if regime == 'train' else test_noise
+        flag_off = {'train': 0, 'val': 1, 'test': 2}[flag]
+        data = self._generate(regime, seed + flag_off, strengths, noise,
+                              n_data_envs, n_samples, seq_len, pred_len)
+        self.data = (data - self.mean) / self.std
+        self.channel_labels = ['Ch0:Base', 'Ch1:Causal', 'Ch2:Causal',
+                               'Ch3:Spurious(env)', 'Ch4:Confound',
+                               'Ch5:Indep', 'Ch6:Indep']
+
+    @staticmethod
+    def _generate(regime, seed, strengths, noise, n_data_envs,
+                  n_samples, seq_len, pred_len):
+        rng = np.random.RandomState(seed)
+        total_len = n_samples + seq_len + pred_len
+        data = np.zeros((total_len, 7), dtype=np.float32)
+        # Ch0: AR(1) 基础信号
+        for t in range(1, total_len):
+            data[t, 0] = 0.8 * data[t - 1, 0] + rng.randn() * 0.5
+            data[t, 0] += 0.3 * np.sin(2 * np.pi * t / 96)
+        # 数据环境标签: 平滑过程 -> 每个 batch 混合多环境 (暴露跨环境不稳定性)
+        env_phase = np.sin(2 * np.pi * np.arange(total_len) / 40.0)
+        env_idx = ((env_phase * 0.5 + 0.5) * n_data_envs).astype(int) % n_data_envs
+        # Ch1/Ch2: 稳定因果 (强耦合, 不随环境变) -> 正确的跨通道选择应明显获益
+        for t in range(1, total_len):
+            data[t, 1] = 0.9 * data[t - 1, 0] + 0.4 * data[t - 1, 1] + rng.randn() * noise
+            data[t, 2] = 0.8 * np.tanh(data[t - 1, 0]) + 0.4 * data[t - 1, 2] + rng.randn() * noise
+            # Ch3: 虚假相关, 强度随数据环境变化
+            data[t, 3] = strengths[env_idx[t]] * data[t - 1, 0] + rng.randn() * noise
+        # Ch4: 受隐变量 confound
+        hidden = np.cumsum(rng.randn(total_len) * 0.3)
+        for t in range(1, total_len):
+            data[t, 4] = 0.5 * hidden[t] + rng.randn() * noise
+        data[:, 0] += 0.2 * hidden
+        # Ch5, Ch6: 独立噪声
+        data[:, 5] = np.cumsum(rng.randn(total_len) * 0.3)
+        data[:, 6] = rng.randn(total_len) * 0.5
+        for t in range(1, total_len):
+            data[t, 6] += 0.4 * data[t - 1, 6]
+        return data
+
+    def __len__(self):
+        return len(self.data) - self.seq_len - self.pred_len + 1
+
+    def __getitem__(self, index):
+        s = index
+        e = s + self.seq_len
+        r = e + self.pred_len
+        return (torch.tensor(self.data[s:e], dtype=torch.float32),
+                torch.tensor(self.data[e:r], dtype=torch.float32))
 
 
 def get_dataloader(dataset, batch_size=32, shuffle=True, num_workers=0):

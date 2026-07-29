@@ -45,12 +45,17 @@ class CausalStabilityGate(nn.Module):
     不稳定的通道依赖（虚假相关）→ 低门控权重 → 保持通道独立
     """
     def __init__(self, n_vars, d_model, n_envs=4, rff_dim=32,
-                 stability_threshold=0.1, temperature=1.0, learn_temperature=True):
+                 stability_threshold=0.1, temperature=1.0, learn_temperature=True,
+                 prior_weight: float = 0.3, stability_v2: bool = False,
+                 prior_only: bool = False):
         super().__init__()
         self.n_vars = n_vars
         self.d_model = d_model
         self.n_envs = n_envs
         self.rff_dim = rff_dim
+        self.prior_weight = prior_weight
+        self.stability_v2 = stability_v2
+        self.prior_only = prior_only
         self.rff_kernel = RFFKernel(d_model, rff_dim)
         self.stability_bias = nn.Parameter(torch.zeros(1))
         self.channel_prior = nn.Parameter(torch.zeros(n_vars, n_vars))
@@ -98,18 +103,79 @@ class CausalStabilityGate(nn.Module):
         stability = 1.0 / (1.0 + cv + self.stability_bias.abs())
         return stability
 
+    def compute_stability_score_v2(self, x):
+        """改进版稳定性分数 (SOTA关键修复)。
+
+        修复旧版两大缺陷:
+        1. 旧版稳定性只用跨环境变异系数 CV (1/(1+cv))，完全忽略依赖强度，
+           导致【独立通道】(HSIC≈0 但跨环境都稳定) 反而得到高门控。
+           新版 = 依赖强度(hsic_mean) × 跨环境一致性(1/(1+cv))，
+           只有【强依赖且稳定】的通道对才获得高分。
+        2. 旧版把单个样本的 patch_num 切成 n_envs 份 (每份仅~3 patch) 估 HSIC，纯噪声。
+           新版把 batch 维一起池化 (m = bs*env_size 个成对样本)，HSIC 估计稳健得多。
+
+        x: [bs, nvars, patch_num, d_model]
+        returns: [bs, nvars, nvars] (batch内共享的稳定性分数)
+        """
+        bs, nvars, patch_num, d_model = x.shape
+        n_envs = self.n_envs
+        env_size = patch_num // n_envs
+        if env_size < 1:
+            return torch.ones(bs, nvars, nvars, device=x.device)
+        z = self.rff_kernel(x.reshape(-1, d_model)).reshape(bs, nvars, patch_num, self.rff_dim)
+        z = z[:, :, :n_envs * env_size, :].reshape(bs, nvars, n_envs, env_size, self.rff_dim)
+        # [n_envs, nvars, m, rff]，其中 m = bs*env_size 为每环境的成对样本数
+        z = z.permute(2, 1, 0, 3, 4).reshape(n_envs, nvars, bs * env_size, self.rff_dim)
+        z = z - z.mean(dim=2, keepdim=True)   # 逐环境中心化
+        m = z.shape[2]
+        # 线性核 HSIC (RFF): K[e,c] = Z_{e,c} Z_{e,c}^T ∈ [m,m]
+        # HSIC[e,i,j] = <K[e,i], K[e,j]> / m^2 (gram 矩阵内积)。
+        # 用 per-env 矩阵乘实现，避免 einsum 'eip,ejp->eij' 物化 [E,C,C,m*m]
+        # (C=321 时约 12GB) 导致高维 OOM。
+        K = torch.einsum('ecma,ecna->ecmn', z, z)              # [E, C, m, m]
+        P = m * m
+        Kf = K.reshape(n_envs, nvars, P)                       # [E, C, P]
+        hsic = torch.empty(n_envs, nvars, nvars, device=x.device)
+        for e in range(n_envs):
+            Ke = Kf[e]                                         # [C, P]
+            hsic[e] = (Ke @ Ke.T) / P                          # [C, C]
+        hsic_mean = hsic.mean(dim=0)                        # [C,C] 依赖强度
+        hsic_std = hsic.std(dim=0)
+        cv = hsic_std / (hsic_mean + 1e-6)
+        stability = hsic_mean / (1.0 + cv + self.stability_bias.abs())
+        return stability.unsqueeze(0).expand(bs, nvars, nvars)
+
     def forward(self, x):
         """
         x: [bs, nvars, patch_num, d_model]
         returns: gate_matrix [bs, nvars, nvars] ∈ [0,1]
         """
-        stability = self.compute_stability_score(x)
-        prior = torch.sigmoid(self.channel_prior)
-        stability = stability * 0.7 + prior.unsqueeze(0) * 0.3
-        logit = self.gate_mlp(stability.unsqueeze(-1)).squeeze(-1)
-        # 温度缩放：clamp防止T退化为0/负数导致数值爆炸或方向反转
         temp = self.temperature_param.clamp(min=0.1, max=10.0)
-        gate = torch.sigmoid(logit / temp)
+        if self.prior_only:
+            # 诊断对照 (gate_prior_only): 完全剥离稳定性/HSIC信号,
+            # 门控退化为纯 channel_prior 的(input-independent)函数,
+            # 用以验证 full_v2 的提升是否真来自因果稳定性信号。
+            bs, nvars, _, _ = x.shape
+            stability_std = torch.zeros(bs, nvars, nvars, device=x.device)
+            logit = self.gate_mlp(stability_std.unsqueeze(-1)).squeeze(-1)
+            logit = logit + self.prior_weight * self.channel_prior.unsqueeze(0)
+            gate = torch.sigmoid(logit / temp)
+        elif self.stability_v2:
+            stability = self.compute_stability_score_v2(x)
+            # 逐batch标准化非对角依赖分数，保证进入MLP前尺度良好、可分化
+            mean = stability.mean(dim=(1, 2), keepdim=True)
+            std = stability.std(dim=(1, 2), keepdim=True) + 1e-6
+            stability_std = (stability - mean) / std
+            logit = self.gate_mlp(stability_std.unsqueeze(-1)).squeeze(-1)
+            # 先验作为 logit 空间的可学习加性偏置 (prior_weight 控制强度)
+            logit = logit + self.prior_weight * self.channel_prior.unsqueeze(0)
+            gate = torch.sigmoid(logit / temp)
+        else:
+            stability = self.compute_stability_score(x)
+            prior = torch.sigmoid(self.channel_prior)
+            stability = stability * (1 - self.prior_weight) + prior.unsqueeze(0) * self.prior_weight
+            logit = self.gate_mlp(stability.unsqueeze(-1)).squeeze(-1)
+            gate = torch.sigmoid(logit / temp)
         eye = torch.eye(self.n_vars, device=x.device).unsqueeze(0)
         gate = gate * (1 - eye) + eye
 
@@ -120,6 +186,22 @@ class CausalStabilityGate(nn.Module):
         ent = -(p * torch.log(p) + (1 - p) * torch.log(1 - p))
         self.last_entropy = ent.mean()
         return gate
+
+    def get_diagnostics(self):
+        """返回门控相关可学习参数的诊断信息（标量字典），供消融可观测性插桩使用。"""
+        prior_sig = torch.sigmoid(self.channel_prior).detach()
+        diag = {
+            'gate_type': 'CausalStabilityGate',
+            'channel_prior_sig_mean': float(prior_sig.mean()),
+            'channel_prior_sig_min': float(prior_sig.min()),
+            'channel_prior_sig_max': float(prior_sig.max()),
+            'stability_bias': float(self.stability_bias.detach()),
+            'temperature': float(self.temperature_param.detach()),
+            'prior_weight': float(self.prior_weight),
+        }
+        if self.last_entropy is not None:
+            diag['last_entropy'] = float(self.last_entropy.detach())
+        return diag
 
 
 class CausalChannelAttention(nn.Module):
@@ -165,28 +247,112 @@ class CausalChannelAttention(nn.Module):
         return out
 
 
+class CausalChannelAttentionTemporal(nn.Module):
+    """时间分辨率保留的门控通道注意力。
+
+    与 CausalChannelAttention 的关键区别：不对 patch_num 维度做池化，
+    而是在【每个 patch 位置】上独立地跨通道做门控注意力。
+    这样滞后因果依赖（如 Ch_i[t] ← Ch_j[t-1]）所携带的时间性信息
+    不会像"先池化再广播"那样被抹平。
+
+    门控矩阵在所有 patch 位置共享（通道对之间的因果关系被视为时间上稳定的），
+    这既符合"稳定因果"的建模假设，也大幅减少参数与计算量。
+    """
+    def __init__(self, d_model, n_heads, n_vars, dropout=0.1):
+        super().__init__()
+        self.d_model = d_model
+        self.n_heads = n_heads
+        self.n_vars = n_vars
+        self.d_k = d_model // n_heads
+        self.W_Q = nn.Linear(d_model, d_model)
+        self.W_K = nn.Linear(d_model, d_model)
+        self.W_V = nn.Linear(d_model, d_model)
+        self.W_O = nn.Linear(d_model, d_model)
+        self.dropout = nn.Dropout(dropout)
+        self.norm = nn.LayerNorm(d_model)
+        self.scale = self.d_k ** -0.5
+
+    def forward(self, x, gate_matrix):
+        """
+        x: [bs, nvars, d_model, patch_num]
+        gate_matrix: [bs, nvars, nvars]
+        returns: [bs, nvars, d_model, patch_num]
+        """
+        bs, nvars, d_model, patch_num = x.shape
+        # 把每个 patch 位置当作独立样本： [bs*patch_num, nvars, d_model]
+        xt = x.permute(0, 3, 1, 2).contiguous().view(bs * patch_num, nvars, d_model)
+        residual = xt
+        B = bs * patch_num
+        Q = self.W_Q(xt).view(B, nvars, self.n_heads, self.d_k).transpose(1, 2)
+        K = self.W_K(xt).view(B, nvars, self.n_heads, self.d_k).transpose(1, 2)
+        V = self.W_V(xt).view(B, nvars, self.n_heads, self.d_k).transpose(1, 2)
+        attn = (Q @ K.transpose(-2, -1)) * self.scale  # [B, heads, nvars, nvars]
+        # 门控在每个 patch 位置共享
+        gate_exp = gate_matrix.unsqueeze(1).expand(bs, patch_num, nvars, nvars)
+        gate_exp = gate_exp.reshape(B, nvars, nvars)
+        # 软门控：log域加性偏置（与 CausalChannelAttention 一致）
+        attn = attn + torch.log(gate_exp.unsqueeze(1).clamp(min=1e-4))
+        attn = F.softmax(attn, dim=-1)
+        attn = self.dropout(attn)
+        out = (attn @ V).transpose(1, 2).contiguous().view(B, nvars, d_model)
+        out = self.W_O(out)
+        out = self.dropout(out)
+        out = self.norm(residual + out)
+        # 还原到 [bs, nvars, d_model, patch_num]
+        out = out.view(bs, patch_num, nvars, d_model).permute(0, 2, 3, 1).contiguous()
+        return out
+
+
 class CausalChannelInteraction(nn.Module):
     """完整的因果通道交互模块
     组合: 因果稳定性门控 + 通道交叉注意力 + 信息融合
+
+    temporal_mix:
+        False (默认, 向后兼容) — 对 patch_num 池化后做通道注意力, 再广播回所有patch。
+            局限: 通道交互只能给每个时刻加一个时间上恒定的偏移。
+        True  — 使用 CausalChannelAttentionTemporal, 在每个patch位置逐点做门控通道注意力,
+            保留时间分辨率, 对滞后因果依赖至关重要 (SOTA 关键改进)。
     """
     def __init__(self, n_vars, d_model, patch_num, n_heads=4, n_envs=4,
-                 rff_dim=32, dropout=0.1, fusion_alpha=0.3):
+                 rff_dim=32, dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3,
+                 temporal_mix: bool = False, temperature: float = 1.0,
+                 stability_v2: bool = False, per_channel_alpha: bool = False,
+                 alpha_init: float = None):
         super().__init__()
         self.n_vars = n_vars
         self.d_model = d_model
         self.patch_num = patch_num
         self.fusion_alpha = fusion_alpha
+        self.prior_weight = prior_weight
+        self.temporal_mix = temporal_mix
+        self.per_channel_alpha = per_channel_alpha
         self.stability_gate = CausalStabilityGate(
-            n_vars=n_vars, d_model=d_model, n_envs=n_envs, rff_dim=rff_dim
+            n_vars=n_vars, d_model=d_model, n_envs=n_envs, rff_dim=rff_dim,
+            prior_weight=prior_weight, temperature=temperature,
+            stability_v2=stability_v2,
         )
-        self.channel_attn = CausalChannelAttention(
-            d_model=d_model, n_heads=n_heads, n_vars=n_vars, dropout=dropout
-        )
+        if temporal_mix:
+            self.channel_attn = CausalChannelAttentionTemporal(
+                d_model=d_model, n_heads=n_heads, n_vars=n_vars, dropout=dropout
+            )
+        else:
+            self.channel_attn = CausalChannelAttention(
+                d_model=d_model, n_heads=n_heads, n_vars=n_vars, dropout=dropout
+            )
         self.fusion_proj = nn.Sequential(
             nn.Linear(d_model, d_model), nn.GELU(),
             nn.Dropout(dropout), nn.Linear(d_model, d_model),
         )
-        self.alpha = nn.Parameter(torch.tensor(fusion_alpha))
+        # 融合系数 alpha。per_channel_alpha=True 时为逐通道可学习向量，
+        # 且 alpha_init 默认取负值 (sigmoid后接近0)，使模型【默认接近通道独立】，
+        # 仅当通道混合能降低loss时才逐通道地开启混合 —— 实现"优雅回退"，
+        # 保证在混合无益的场景 (低维/长horizon) 不劣于通道独立基线 (SOTA关键)。
+        if per_channel_alpha:
+            init = alpha_init if alpha_init is not None else -2.0
+            self.alpha = nn.Parameter(torch.full((n_vars,), float(init)))
+        else:
+            init = alpha_init if alpha_init is not None else fusion_alpha
+            self.alpha = nn.Parameter(torch.tensor(float(init)))
 
     def forward(self, x):
         """
@@ -196,14 +362,29 @@ class CausalChannelInteraction(nn.Module):
         bs, nvars, d_model, patch_num = x.shape
         x_for_gate = x.permute(0, 1, 3, 2)   # [bs, nvars, patch_num, d_model]
         gate_matrix = self.stability_gate(x_for_gate)
-        x_pooled = x.mean(dim=-1)             # [bs, nvars, d_model]
-        x_channel = self.channel_attn(x_pooled, gate_matrix)
-        x_channel_proj = self.fusion_proj(x_channel)
-        x_channel_expand = x_channel_proj.unsqueeze(-1).expand_as(x)
-        alpha = torch.sigmoid(self.alpha)
-        out = (1 - alpha) * x + alpha * x_channel_expand
+        if self.per_channel_alpha:
+            alpha_vec = torch.sigmoid(self.alpha).view(1, nvars, 1, 1)  # [1,nvars,1,1]
+        else:
+            alpha_vec = torch.sigmoid(self.alpha)
+
+        if self.temporal_mix:
+            # 逐patch门控通道注意力，保留时间分辨率
+            x_channel = self.channel_attn(x, gate_matrix)         # [bs, nvars, d_model, patch_num]
+            x_ch = x_channel.permute(0, 1, 3, 2)                  # [bs, nvars, patch_num, d_model]
+            x_ch = self.fusion_proj(x_ch).permute(0, 1, 3, 2)     # 回到 [bs, nvars, d_model, patch_num]
+            out = (1 - alpha_vec) * x + alpha_vec * x_ch
+        else:
+            x_pooled = x.mean(dim=-1)             # [bs, nvars, d_model]
+            x_channel = self.channel_attn(x_pooled, gate_matrix)
+            x_channel_proj = self.fusion_proj(x_channel)
+            x_channel_expand = x_channel_proj.unsqueeze(-1).expand_as(x)
+            out = (1 - alpha_vec) * x + alpha_vec * x_channel_expand
         return out, gate_matrix
 
     def get_last_entropy(self):
         """返回最近一次forward的门控熵（标量tensor或None），供上层作为正则项使用"""
         return self.stability_gate.last_entropy
+
+    def get_diagnostics(self):
+        """返回门控相关可学习参数诊断信息，供消融可观测性插桩使用"""
+        return self.stability_gate.get_diagnostics()

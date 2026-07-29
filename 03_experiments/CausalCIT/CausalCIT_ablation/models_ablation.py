@@ -27,7 +27,8 @@ sys.path.insert(0, DEMO_DIR)
 from models.layers import RevIN, series_decomp
 from models.patchtst import TSTiEncoder, Flatten_Head, PatchTST
 from models.causal_channel import (
-    RFFKernel, CausalStabilityGate, CausalChannelAttention, CausalChannelInteraction
+    RFFKernel, CausalStabilityGate, CausalChannelAttention,
+    CausalChannelAttentionTemporal, CausalChannelInteraction
 )
 from models.causalcit import CausalCIT
 
@@ -38,10 +39,11 @@ from models.causalcit import CausalCIT
 
 class CorrelationGate(nn.Module):
     """用简单Pearson相关性替代HSIC的门控"""
-    def __init__(self, n_vars, d_model, n_envs=4, **kwargs):
+    def __init__(self, n_vars, d_model, n_envs=4, prior_weight: float = 0.3, **kwargs):
         super().__init__()
         self.n_vars = n_vars
         self.n_envs = n_envs
+        self.prior_weight = prior_weight
         self.channel_prior = nn.Parameter(torch.zeros(n_vars, n_vars))
         self.gate_mlp = nn.Sequential(
             nn.Linear(1, 16), nn.GELU(), nn.Linear(16, 1), nn.Sigmoid()
@@ -79,20 +81,33 @@ class CorrelationGate(nn.Module):
         stability = 1.0 / (1.0 + cv + self.stability_bias.abs())
 
         prior = torch.sigmoid(self.channel_prior)
-        stability = stability * 0.7 + prior.unsqueeze(0) * 0.3
+        stability = stability * (1 - self.prior_weight) + prior.unsqueeze(0) * self.prior_weight
         gate = self.gate_mlp(stability.unsqueeze(-1)).squeeze(-1)
 
         eye = torch.eye(self.n_vars, device=x.device).unsqueeze(0)
         gate = gate * (1 - eye) + eye
         return gate
 
+    def get_diagnostics(self):
+        """返回门控相关可学习参数诊断信息，供消融可观测性插桩使用。"""
+        prior_sig = torch.sigmoid(self.channel_prior).detach()
+        return {
+            'gate_type': 'CorrelationGate',
+            'channel_prior_sig_mean': float(prior_sig.mean()),
+            'channel_prior_sig_min': float(prior_sig.min()),
+            'channel_prior_sig_max': float(prior_sig.max()),
+            'prior_weight': float(self.prior_weight),
+        }
+
 
 class NoHSIC_ChannelInteraction(nn.Module):
     """变体: 用Pearson相关性替代HSIC"""
     def __init__(self, n_vars, d_model, patch_num, n_heads=4, n_envs=4,
-                 rff_dim=32, dropout=0.1, fusion_alpha=0.3):
+                 rff_dim=32, dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3):
         super().__init__()
-        self.stability_gate = CorrelationGate(n_vars, d_model, n_envs=n_envs)
+        self.prior_weight = prior_weight
+        self.stability_gate = CorrelationGate(n_vars, d_model, n_envs=n_envs,
+                                              prior_weight=prior_weight)
         self.channel_attn = CausalChannelAttention(d_model, n_heads, n_vars, dropout)
         self.fusion_proj = nn.Sequential(
             nn.Linear(d_model, d_model), nn.GELU(),
@@ -111,6 +126,9 @@ class NoHSIC_ChannelInteraction(nn.Module):
         out = (1 - alpha) * x + alpha * x_proj
         return out, gate_matrix
 
+    def get_diagnostics(self):
+        return self.stability_gate.get_diagnostics()
+
 
 # ============================================================
 # 变体2: w/o EnvSplit — 不划分环境，全局HSIC
@@ -118,9 +136,10 @@ class NoHSIC_ChannelInteraction(nn.Module):
 
 class GlobalHSICGate(nn.Module):
     """不划分环境，在整个序列上计算单一HSIC"""
-    def __init__(self, n_vars, d_model, rff_dim=32, **kwargs):
+    def __init__(self, n_vars, d_model, rff_dim=32, prior_weight: float = 0.3, **kwargs):
         super().__init__()
         self.n_vars = n_vars
+        self.prior_weight = prior_weight
         self.rff_kernel = RFFKernel(d_model, rff_dim)
         self.channel_prior = nn.Parameter(torch.zeros(n_vars, n_vars))
         self.gate_mlp = nn.Sequential(
@@ -148,20 +167,33 @@ class GlobalHSICGate(nn.Module):
         hsic_norm = hsic_global / (hsic_global.max() + 1e-8)
 
         prior = torch.sigmoid(self.channel_prior)
-        score = hsic_norm * 0.7 + prior.unsqueeze(0) * 0.3
+        score = hsic_norm * (1 - self.prior_weight) + prior.unsqueeze(0) * self.prior_weight
         gate = self.gate_mlp(score.unsqueeze(-1)).squeeze(-1)
 
         eye = torch.eye(self.n_vars, device=x.device).unsqueeze(0)
         gate = gate * (1 - eye) + eye
         return gate
 
+    def get_diagnostics(self):
+        """返回门控相关可学习参数诊断信息，供消融可观测性插桩使用。"""
+        prior_sig = torch.sigmoid(self.channel_prior).detach()
+        return {
+            'gate_type': 'GlobalHSICGate',
+            'channel_prior_sig_mean': float(prior_sig.mean()),
+            'channel_prior_sig_min': float(prior_sig.min()),
+            'channel_prior_sig_max': float(prior_sig.max()),
+            'prior_weight': float(self.prior_weight),
+        }
+
 
 class NoEnv_ChannelInteraction(nn.Module):
     """变体: 不划分环境，全局HSIC"""
     def __init__(self, n_vars, d_model, patch_num, n_heads=4, n_envs=4,
-                 rff_dim=32, dropout=0.1, fusion_alpha=0.3):
+                 rff_dim=32, dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3):
         super().__init__()
-        self.stability_gate = GlobalHSICGate(n_vars, d_model, rff_dim=rff_dim)
+        self.prior_weight = prior_weight
+        self.stability_gate = GlobalHSICGate(n_vars, d_model, rff_dim=rff_dim,
+                                             prior_weight=prior_weight)
         self.channel_attn = CausalChannelAttention(d_model, n_heads, n_vars, dropout)
         self.fusion_proj = nn.Sequential(
             nn.Linear(d_model, d_model), nn.GELU(),
@@ -180,6 +212,9 @@ class NoEnv_ChannelInteraction(nn.Module):
         out = (1 - alpha) * x + alpha * x_proj
         return out, gate_matrix
 
+    def get_diagnostics(self):
+        return self.stability_gate.get_diagnostics()
+
 
 # ============================================================
 # 变体3: w/o Gate — 全连接通道注意力，无门控
@@ -188,9 +223,10 @@ class NoEnv_ChannelInteraction(nn.Module):
 class NoGate_ChannelInteraction(nn.Module):
     """变体: 所有通道全连接注意力，不做门控选择"""
     def __init__(self, n_vars, d_model, patch_num, n_heads=4, n_envs=4,
-                 rff_dim=32, dropout=0.1, fusion_alpha=0.3):
+                 rff_dim=32, dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3):
         super().__init__()
         self.n_vars = n_vars
+        self.prior_weight = prior_weight
         # 标准多头注意力（无门控mask）
         self.W_Q = nn.Linear(d_model, d_model)
         self.W_K = nn.Linear(d_model, d_model)
@@ -231,6 +267,80 @@ class NoGate_ChannelInteraction(nn.Module):
         gate_matrix = torch.ones(bs, nvars, nvars, device=x.device)
         return out_final, gate_matrix
 
+    def get_diagnostics(self):
+        return None
+
+
+# ============================================================
+# 变体4: 控制容量对照 — 纯可学习门控 (LearnedGate)
+# 与 full_v2 参数规模完全匹配(含 N×N 可学习门控矩阵 channel_prior),
+# 但门控完全由学习矩阵决定, 不经任何因果/稳定性逻辑(HSIC).
+# 目的: 隔离 "因果稳定性逻辑" vs "可学习容量" —— 若它也能赢, 则增益来自容量/过拟合.
+# ============================================================
+
+class PureLearnedGate(nn.Module):
+    """纯可学习 N×N 通道门控矩阵, 不走任何因果/稳定性逻辑。
+    参数规模与 full_v2 的 channel_prior 完全匹配 (N×N), 用于容量控制对照。"""
+    def __init__(self, n_vars, d_model, prior_weight: float = 0.05,
+                 temperature: float = 1.0, **kwargs):
+        super().__init__()
+        self.n_vars = n_vars
+        self.prior_weight = prior_weight
+        self.channel_prior = nn.Parameter(torch.zeros(n_vars, n_vars))
+        self.temperature = temperature
+
+    def forward(self, x):
+        # x: [bs, nvars, patch_num, d_model] (未使用, 门控纯学习)
+        bs = x.shape[0]
+        gate = torch.sigmoid(self.prior_weight * self.channel_prior / self.temperature)
+        eye = torch.eye(self.n_vars, device=gate.device)
+        gate = gate * (1 - eye) + eye
+        return gate.unsqueeze(0).expand(bs, self.n_vars, self.n_vars)
+
+    def get_diagnostics(self):
+        return {'gate_type': 'PureLearnedGate',
+                'channel_prior_sig_mean': float(torch.sigmoid(self.channel_prior).mean()),
+                'prior_weight': float(self.prior_weight)}
+
+
+class LearnedGate_ChannelInteraction(nn.Module):
+    """容量匹配对照: 与 full_v2 相同通道注意力骨架 + 相同规模可学习门控,
+    但门控由纯学习矩阵决定(无 HSIC 因果约束)。"""
+    def __init__(self, n_vars, d_model, patch_num, n_heads=4, n_envs=4,
+                 rff_dim=32, dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.05,
+                 temporal_mix: bool = True, alpha_init: float = -2.0, **kwargs):
+        super().__init__()
+        self.stability_gate = PureLearnedGate(n_vars, d_model, prior_weight=prior_weight)
+        if temporal_mix:
+            self.channel_attn = CausalChannelAttentionTemporal(d_model, n_heads, n_vars, dropout)
+        else:
+            self.channel_attn = CausalChannelAttention(d_model, n_heads, n_vars, dropout)
+        self.fusion_proj = nn.Sequential(
+            nn.Linear(d_model, d_model), nn.GELU(),
+            nn.Dropout(dropout), nn.Linear(d_model, d_model),
+        )
+        self.alpha = nn.Parameter(torch.full((n_vars,), float(alpha_init)))
+
+    def forward(self, x):
+        bs, nvars, d_model, patch_num = x.shape
+        x_for_gate = x.permute(0, 1, 3, 2)
+        gate_matrix = self.stability_gate(x_for_gate)
+        alpha_vec = torch.sigmoid(self.alpha).view(1, nvars, 1, 1)
+        if isinstance(self.channel_attn, CausalChannelAttentionTemporal):
+            x_channel = self.channel_attn(x, gate_matrix)
+            x_ch = x_channel.permute(0, 1, 3, 2)
+            x_ch = self.fusion_proj(x_ch).permute(0, 1, 3, 2)
+            out = (1 - alpha_vec) * x + alpha_vec * x_ch
+        else:
+            x_pooled = x.mean(dim=-1)
+            x_channel = self.channel_attn(x_pooled, gate_matrix)
+            x_channel_proj = self.fusion_proj(x_channel).unsqueeze(-1).expand_as(x)
+            out = (1 - alpha_vec) * x + alpha_vec * x_channel_proj
+        return out, gate_matrix
+
+    def get_diagnostics(self):
+        return self.stability_gate.get_diagnostics()
+
 
 # ============================================================
 # 通用消融变体骨干
@@ -243,7 +353,7 @@ class AblationBackbone(nn.Module):
                  d_ff=256, dropout=0., padding_patch=None,
                  individual=False, revin=True, affine=True, subtract_last=False,
                  n_channel_heads=4, n_envs=4, rff_dim=32,
-                 channel_dropout=0.1, fusion_alpha=0.3, **kwargs):
+                 channel_dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3, **kwargs):
         super().__init__()
         self.revin = revin
         if self.revin:
@@ -267,6 +377,7 @@ class AblationBackbone(nn.Module):
             n_vars=c_in, d_model=d_model, patch_num=patch_num,
             n_heads=n_channel_heads, n_envs=n_envs, rff_dim=rff_dim,
             dropout=channel_dropout, fusion_alpha=fusion_alpha,
+            prior_weight=prior_weight,
         )
 
         self.head_nf = d_model * patch_num
@@ -296,6 +407,85 @@ class AblationBackbone(nn.Module):
     def get_gate_matrix(self):
         return self.last_gate_matrix
 
+    def get_diagnostics(self):
+        if hasattr(self.causal_channel, 'get_diagnostics'):
+            return self.causal_channel.get_diagnostics()
+        return None
+
+
+class PriorOnly_ChannelInteraction(nn.Module):
+    """诊断对照 (gate_prior_only): 与 full_v2 完全一致的门控结构
+    (gate_mlp + 可学习温度 + 通道先验 + temporal_mix + per_channel_alpha),
+    但 gate 只吃 channel_prior, 稳定性/HSIC 信号被完全剥离
+    (CausalStabilityGate(prior_only=True)). 用于验证 full_v2 的提升是否
+    真正来自因果稳定性信号, 而非 gate 结构/参数本身 (回应评审刀1)。"""
+
+    def __init__(self, n_vars, d_model, patch_num, n_heads=4, n_envs=4, rff_dim=32,
+                 dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.05,
+                 temperature: float = 0.5, temporal_mix: bool = True,
+                 stability_v2: bool = True, per_channel_alpha: bool = True,
+                 alpha_init: float = -2.0):
+        super().__init__()
+        self.n_vars = n_vars
+        self.d_model = d_model
+        self.patch_num = patch_num
+        self.fusion_alpha = fusion_alpha
+        self.prior_weight = prior_weight
+        self.temporal_mix = temporal_mix
+        self.per_channel_alpha = per_channel_alpha
+        self.stability_gate = CausalStabilityGate(
+            n_vars=n_vars, d_model=d_model, n_envs=n_envs, rff_dim=rff_dim,
+            prior_weight=prior_weight, temperature=temperature,
+            stability_v2=stability_v2, prior_only=True,
+        )
+        if temporal_mix:
+            self.channel_attn = CausalChannelAttentionTemporal(
+                d_model=d_model, n_heads=n_heads, n_vars=n_vars, dropout=dropout)
+        else:
+            self.channel_attn = CausalChannelAttention(
+                d_model=d_model, n_heads=n_heads, n_vars=n_vars, dropout=dropout)
+        self.fusion_proj = nn.Sequential(
+            nn.Linear(d_model, d_model), nn.GELU(),
+            nn.Dropout(dropout), nn.Linear(d_model, d_model),
+        )
+        if per_channel_alpha:
+            init = alpha_init if alpha_init is not None else -2.0
+            self.alpha = nn.Parameter(torch.full((n_vars,), float(init)))
+        else:
+            init = alpha_init if alpha_init is not None else fusion_alpha
+            self.alpha = nn.Parameter(torch.tensor(float(init)))
+
+    def forward(self, x):
+        bs, nvars, d_model, patch_num = x.shape
+        x_for_gate = x.permute(0, 1, 3, 2)   # [bs, nvars, patch_num, d_model]
+        gate_matrix = self.stability_gate(x_for_gate)
+        self.last_gate_matrix = gate_matrix.detach()
+        if self.per_channel_alpha:
+            alpha_vec = torch.sigmoid(self.alpha).view(1, nvars, 1, 1)
+        else:
+            alpha_vec = torch.sigmoid(self.alpha)
+        if self.temporal_mix:
+            x_channel = self.channel_attn(x, gate_matrix)         # [bs, nvars, d_model, patch_num]
+            x_ch = x_channel.permute(0, 1, 3, 2)                  # [bs, nvars, patch_num, d_model]
+            x_ch = self.fusion_proj(x_ch).permute(0, 1, 3, 2)     # 回到 [bs, nvars, d_model, patch_num]
+            out = (1 - alpha_vec) * x + alpha_vec * x_ch
+        else:
+            x_pooled = x.mean(dim=-1)             # [bs, nvars, d_model]
+            x_channel = self.channel_attn(x_pooled, gate_matrix)
+            x_channel_proj = self.fusion_proj(x_channel)
+            x_channel_expand = x_channel_proj.unsqueeze(-1).expand_as(x)
+            out = (1 - alpha_vec) * x + alpha_vec * x_channel_expand
+        return out, gate_matrix
+
+    def get_gate_matrix(self):
+        return self.last_gate_matrix
+
+    def get_last_entropy(self):
+        return self.stability_gate.last_entropy
+
+    def get_diagnostics(self):
+        return self.stability_gate.get_diagnostics()
+
 
 class AblationModel(nn.Module):
     """通用消融模型包装"""
@@ -303,7 +493,7 @@ class AblationModel(nn.Module):
                  e_layers=3, n_heads=4, d_model=64, d_ff=256,
                  dropout=0.2, patch_len=16, stride=8, padding_patch='end',
                  n_channel_heads=4, n_envs=4, rff_dim=64,
-                 channel_dropout=0.1, fusion_alpha=0.3, **kwargs):
+                 channel_dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3, **kwargs):
         super().__init__()
         self.model = AblationBackbone(
             c_in=enc_in, context_window=seq_len, target_window=pred_len,
@@ -313,6 +503,7 @@ class AblationModel(nn.Module):
             d_ff=d_ff, dropout=dropout, padding_patch=padding_patch,
             n_channel_heads=n_channel_heads, n_envs=n_envs, rff_dim=rff_dim,
             channel_dropout=channel_dropout, fusion_alpha=fusion_alpha,
+            prior_weight=prior_weight,
         )
 
     def forward(self, x):
@@ -324,6 +515,9 @@ class AblationModel(nn.Module):
     def get_gate_matrix(self):
         return self.model.get_gate_matrix()
 
+    def get_diagnostics(self):
+        return self.model.get_diagnostics()
+
 
 # ============================================================
 # 工厂函数: 创建各变体
@@ -333,6 +527,7 @@ def create_ablation_model(variant, **kwargs):
     """
     variant:
         'full'     — 完整CausalCIT (A+B+C)
+        'full_fix' — 完整CausalCIT, 降低先验权重(prior_weight=0.1), 用于诊断先验主导假设
         'no_hsic'  — 去掉HSIC，用Pearson相关性
         'no_env'   — 去掉环境划分，全局HSIC
         'no_gate'  — 去掉门控，全连接通道注意力
@@ -340,12 +535,42 @@ def create_ablation_model(variant, **kwargs):
     """
     if variant == 'full':
         return CausalCIT(**kwargs)
+    elif variant == 'full_fix':
+        return CausalCIT(**{**kwargs, 'prior_weight': 0.1})
+    elif variant == 'full_v2':
+        # SOTA改进版: 时间分辨率保留的通道交互 + 批量池化HSIC稳定性门控(v2)
+        #             + 低先验权重 + 温度锐化门控
+        v2 = {k: v for k, v in kwargs.items()
+              if k not in ('prior_weight', 'temperature', 'temporal_mix', 'stability_v2',
+                           'per_channel_alpha', 'alpha_init')}
+        return CausalCIT(prior_weight=kwargs.get('prior_weight', 0.05),
+                         temperature=kwargs.get('temperature', 0.5),
+                         temporal_mix=True, stability_v2=True,
+                         per_channel_alpha=True, alpha_init=kwargs.get('alpha_init', -2.0),
+                         **v2)
     elif variant == 'no_hsic':
         return AblationModel(NoHSIC_ChannelInteraction, **kwargs)
     elif variant == 'no_env':
         return AblationModel(NoEnv_ChannelInteraction, **kwargs)
     elif variant == 'no_gate':
         return AblationModel(NoGate_ChannelInteraction, **kwargs)
+    elif variant == 'learned_gate':
+        # 容量匹配对照: 参数规模同 full_v2 (含 N×N 可学习门控 channel_prior),
+        # 但门控由纯学习矩阵决定, 不经任何因果/稳定性(HSIC)逻辑.
+        return AblationModel(LearnedGate_ChannelInteraction,
+                             **{k: v for k, v in kwargs.items()})
+    elif variant == 'gate_prior_only':
+        # 诊断对照 (回应评审刀1): 与 full_v2 完全一致的门控结构
+        # (gate_mlp + 可学习温度 + 通道先验 + temporal_mix + per_channel_alpha),
+        # 但剥离稳定性/HSIC 信号 (CausalStabilityGate(prior_only=True)),
+        # 用以验证 full_v2 的提升是否真来自因果稳定性信号。
+        return AblationModel(PriorOnly_ChannelInteraction,
+                             **{k: v for k, v in kwargs.items()})
+    elif variant == 'capacity_match':
+        # 容量匹配对照 (回应评审刀2): 与 full_v2 同参数规模的标准通道注意力,
+        # 门控由纯学习矩阵决定, 不经任何因果/稳定性(HSIC)逻辑。
+        return AblationModel(LearnedGate_ChannelInteraction,
+                             **{k: v for k, v in kwargs.items()})
     elif variant == 'patchtst':
         # 只取PatchTST需要的参数
         pt_keys = ['enc_in', 'seq_len', 'pred_len', 'e_layers', 'n_heads',

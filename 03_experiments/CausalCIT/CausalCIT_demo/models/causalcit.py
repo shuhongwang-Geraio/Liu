@@ -35,7 +35,10 @@ class CausalCIT_backbone(nn.Module):
                  verbose=False,
                  # CausalCIT 专用参数
                  n_channel_heads=4, n_envs=4, rff_dim=32,
-                 channel_dropout=0.1, fusion_alpha=0.3, **kwargs):
+                 channel_dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3,
+                 temporal_mix: bool = False, temperature: float = 1.0,
+                 stability_v2: bool = False, per_channel_alpha: bool = False,
+                 alpha_init: float = None, **kwargs):
         super().__init__()
 
         # RevIN
@@ -70,6 +73,10 @@ class CausalCIT_backbone(nn.Module):
             n_vars=c_in, d_model=d_model, patch_num=patch_num,
             n_heads=n_channel_heads, n_envs=n_envs, rff_dim=rff_dim,
             dropout=channel_dropout, fusion_alpha=fusion_alpha,
+            prior_weight=prior_weight,
+            temporal_mix=temporal_mix, temperature=temperature,
+            stability_v2=stability_v2,
+            per_channel_alpha=per_channel_alpha, alpha_init=alpha_init,
         )
 
         # Head
@@ -109,6 +116,10 @@ class CausalCIT_backbone(nn.Module):
         """P1优化: 门控熵，供Trainer作为辅助正则项，鼓励gate做出果断的0/1选择"""
         return self.causal_channel.get_last_entropy()
 
+    def get_diagnostics(self):
+        """返回门控相关可学习参数诊断信息，供消融可观测性插桩使用"""
+        return self.causal_channel.get_diagnostics()
+
 
 class CausalCIT(nn.Module):
     """CausalCIT完整模型"""
@@ -120,7 +131,10 @@ class CausalCIT(nn.Module):
                  decomposition=False, kernel_size=25,
                  # CausalCIT 专用
                  n_channel_heads=4, n_envs=4, rff_dim=32,
-                 channel_dropout=0.1, fusion_alpha=0.3, **kwargs):
+                 channel_dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3,
+                 temporal_mix: bool = False, temperature: float = 1.0,
+                 stability_v2: bool = False, per_channel_alpha: bool = False,
+                 alpha_init: float = None, **kwargs):
         super().__init__()
         self.decomposition = decomposition
         backbone_kwargs = dict(
@@ -132,6 +146,10 @@ class CausalCIT(nn.Module):
             revin=revin, affine=affine, subtract_last=subtract_last,
             n_channel_heads=n_channel_heads, n_envs=n_envs, rff_dim=rff_dim,
             channel_dropout=channel_dropout, fusion_alpha=fusion_alpha,
+            prior_weight=prior_weight,
+            temporal_mix=temporal_mix, temperature=temperature,
+            stability_v2=stability_v2,
+            per_channel_alpha=per_channel_alpha, alpha_init=alpha_init,
         )
         if decomposition:
             self.decomp_module = series_decomp(kernel_size)
@@ -165,3 +183,9 @@ class CausalCIT(nn.Module):
         if self.decomposition:
             return self.model_res.get_gate_entropy()
         return self.model.get_gate_entropy()
+
+    def get_diagnostics(self):
+        """返回门控相关可学习参数诊断信息，供消融可观测性插桩使用"""
+        if self.decomposition:
+            return self.model_res.get_diagnostics()
+        return self.model.get_diagnostics()
