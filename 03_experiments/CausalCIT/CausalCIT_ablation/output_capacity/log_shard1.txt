@@ -1,0 +1,78 @@
+  Epoch   1/30 | Train Loss: 0.338333 | Val Loss: 0.204004 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.229127 | Val Loss: 0.185634 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.208030 | Val Loss: 0.172219 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.189219 | Val Loss: 0.154430 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.174992 | Val Loss: 0.152127 | LR: 6.03e-04
+  Epoch   6/30 | Train Loss: 0.169107 | Val Loss: 0.152074 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.165421 | Val Loss: 0.148798 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.162491 | Val Loss: 0.150358 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.160266 | Val Loss: 0.150890 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.158741 | Val Loss: 0.152246 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.157429 | Val Loss: 0.151014 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.156465 | Val Loss: 0.160680 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.155430 | Val Loss: 0.156945 | LR: 9.13e-04
+  Epoch  14/30 | Train Loss: 0.154572 | Val Loss: 0.162654 | LR: 8.66e-04
+  Epoch  15/30 | Train Loss: 0.153747 | Val Loss: 0.163456 | LR: 8.12e-04
+  Early stopping at epoch 15
+  [1/4] electricity pl96 learned_gate s123 -> MSE=0.16541 MAE=0.25843 (1409s)
+  Epoch   1/30 | Train Loss: 0.342287 | Val Loss: 0.205343 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.227214 | Val Loss: 0.187103 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.208710 | Val Loss: 0.178683 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.197643 | Val Loss: 0.170342 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.188058 | Val Loss: 0.163789 | LR: 6.03e-04
+  Epoch   6/30 | Train Loss: 0.181140 | Val Loss: 0.163615 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.177474 | Val Loss: 0.163205 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.174858 | Val Loss: 0.167205 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.172797 | Val Loss: 0.173188 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.171273 | Val Loss: 0.174262 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.169975 | Val Loss: 0.179161 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.168945 | Val Loss: 0.176425 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.168055 | Val Loss: 0.176724 | LR: 9.13e-04
+  Epoch  14/30 | Train Loss: 0.167244 | Val Loss: 0.182153 | LR: 8.66e-04
+  Epoch  15/30 | Train Loss: 0.166617 | Val Loss: 0.189819 | LR: 8.12e-04
+  Early stopping at epoch 15
+  [2/4] electricity pl192 learned_gate s123 -> MSE=0.17455 MAE=0.26520 (1244s)
+  Epoch   1/30 | Train Loss: 0.636735 | Val Loss: 0.662986 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.475438 | Val Loss: 0.592819 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.432280 | Val Loss: 0.543484 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.384831 | Val Loss: 0.496007 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.351147 | Val Loss: 0.470046 | LR: 6.03e-04
+  Epoch   6/30 | Train Loss: 0.334859 | Val Loss: 0.459584 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.325168 | Val Loss: 0.454823 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.318721 | Val Loss: 0.443493 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.313438 | Val Loss: 0.450240 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.309205 | Val Loss: 0.446679 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.305923 | Val Loss: 0.441829 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.303223 | Val Loss: 0.462376 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.300498 | Val Loss: 0.445507 | LR: 9.13e-04
+  Epoch  14/30 | Train Loss: 0.298359 | Val Loss: 0.440858 | LR: 8.66e-04
+  Epoch  15/30 | Train Loss: 0.295978 | Val Loss: 0.455075 | LR: 8.12e-04
+  Epoch  16/30 | Train Loss: 0.294145 | Val Loss: 0.457660 | LR: 7.50e-04
+  Epoch  17/30 | Train Loss: 0.292605 | Val Loss: 0.447545 | LR: 6.83e-04
+  Epoch  18/30 | Train Loss: 0.291148 | Val Loss: 0.449299 | LR: 6.11e-04
+  Epoch  19/30 | Train Loss: 0.289709 | Val Loss: 0.452026 | LR: 5.37e-04
+  Epoch  20/30 | Train Loss: 0.288714 | Val Loss: 0.460588 | LR: 4.63e-04
+  Epoch  21/30 | Train Loss: 0.287607 | Val Loss: 0.466014 | LR: 3.89e-04
+  Epoch  22/30 | Train Loss: 0.286607 | Val Loss: 0.463065 | LR: 3.17e-04
+  Early stopping at epoch 22
+  [3/4] traffic pl96 learned_gate s123 -> MSE=0.50220 MAE=0.33552 (3065s)
+  Epoch   1/30 | Train Loss: 0.622911 | Val Loss: 0.598809 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.435414 | Val Loss: 0.529093 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.394045 | Val Loss: 0.497003 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.361949 | Val Loss: 0.465345 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.338914 | Val Loss: 0.442301 | LR: 6.03e-04
+  Epoch   6/30 | Train Loss: 0.323830 | Val Loss: 0.435829 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.315925 | Val Loss: 0.432060 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.310592 | Val Loss: 0.434344 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.306123 | Val Loss: 0.428644 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.302552 | Val Loss: 0.434129 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.300015 | Val Loss: 0.433123 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.297744 | Val Loss: 0.433588 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.295849 | Val Loss: 0.439775 | LR: 9.13e-04
+  Epoch  14/30 | Train Loss: 0.294131 | Val Loss: 0.435813 | LR: 8.66e-04
+  Epoch  15/30 | Train Loss: 0.292439 | Val Loss: 0.440773 | LR: 8.12e-04
+  Epoch  16/30 | Train Loss: 0.291034 | Val Loss: 0.437078 | LR: 7.50e-04
+  Epoch  17/30 | Train Loss: 0.289686 | Val Loss: 0.435901 | LR: 6.83e-04
+  Early stopping at epoch 17
+  [4/4] traffic pl192 learned_gate s123 -> MSE=0.52573 MAE=0.34909 (1427s)
+shard 完成: ./output_capacity/jobs_shard1.json (4/4 个结果, 失败见 /home/wangsh/workspace/Liu/03_experiments/CausalCIT/CausalCIT_ablation/output_capacity/errors_shard1.csv)

@@ -1,0 +1,35 @@
+=== Gate Diagnostics (跨seed均值) ===
+
+[no_env]
+  gate_type: GlobalHSICGate
+  channel_prior_sig_mean: 0.5067089200019836
+  channel_prior_sig_min: 0.36404106616973875
+  channel_prior_sig_max: 0.6705690383911133
+  prior_weight: 0.3
+
+[no_hsic]
+  gate_type: CorrelationGate
+  channel_prior_sig_mean: 0.5048460364341736
+  channel_prior_sig_min: 0.39565380811691286
+  channel_prior_sig_max: 0.6023935556411744
+  prior_weight: 0.3
+
+[full]
+  gate_type: CausalStabilityGate
+  channel_prior_sig_mean: 0.5049558639526367
+  channel_prior_sig_min: 0.37310279011726377
+  channel_prior_sig_max: 0.6520059943199158
+  stability_bias: 0.0
+  temperature: 0.8972684502601623
+  prior_weight: 0.3
+  last_entropy: 0.5353393793106079
+
+[full_fix]
+  gate_type: CausalStabilityGate
+  channel_prior_sig_mean: 0.5043048918247223
+  channel_prior_sig_min: 0.40594246983528137
+  channel_prior_sig_max: 0.6236050009727478
+  stability_bias: 0.0
+  temperature: 0.9074734568595886
+  prior_weight: 0.1
+  last_entropy: 0.5269247263669967

@@ -1,0 +1,52 @@
+# ============ Python ============
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+build/
+dist/
+.ipynb_checkpoints/
+
+# ============ Archives / binaries ============
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+*.part
+
+# ============ Logs / scratch ============
+*.log
+*.bak
+.DS_Store
+re.txt
+
+# ============ Agent / IDE ============
+.codebuddy/
+
+# ============ Model checkpoints ============
+ckpt/
+**/ckpt/
+*.pth
+*.ckpt
+
+# ============ Large data & artifacts (NOT committed) ============
+# 详见根目录 DATA.md：各数据位置、体积、获取方式。
+# 以下均为可重新生成/重新下载的产物，不进版本库，避免污染仓库。
+
+# WOODS OOD 基准：27GB zip + 23GB data（外部参考库，用 woods 脚本重新拉取）
+WOODS-main.zip
+WOODS-main/
+
+# data_ood 内的嵌套 WOODS clone（独立 git 仓库，无提交，不能进本仓库）
+03_experiments/CausalCIT/data_ood/WOODS/
+
+# PatchTST 原始数据集（从 PatchTST 仓库重新下载）
+01_external/PatchTST/code/dataset/*.csv
+
+# 模型预测 / 门控矩阵 dump / 检查点（可重新生成）
+*.npy
+03_experiments/CausalCIT/experiments/**/gate_matrices/
+03_experiments/CausalCIT/experiments/**/checkpoints/

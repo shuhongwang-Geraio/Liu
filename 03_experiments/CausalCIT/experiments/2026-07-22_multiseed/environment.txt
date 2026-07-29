@@ -1,0 +1,28 @@
+========== Python 环境 ==========
+Python 3.10.20
+
+========== Pytorch 信息 ==========
+PyTorch: 2.5.1+cu121
+CUDA: True
+GPU: NVIDIA GeForce RTX 4090
+
+========== pip 已安装包 ==========
+matplotlib               3.10.9
+numpy                    2.2.6
+pandas                   2.3.3
+torch                    2.5.1+cu121
+torchaudio               2.5.1+cu121
+torchvision              0.20.1+cu121
+scipy                    1.14.1
+
+========== 磁盘空间 ==========
+文件系统        大小  已用  可用 已用% 挂载点
+/dev/sda1       7.3T   ~300G  ~7T    ~4% /home
+
+========== 运行参数 ==========
+EXP=all
+N_SEEDS=5
+SEEDS=42,123,2024,7,99
+N_ENVS=4
+DEVICE=cuda
+OUTPUT_DIR=./output_multiseed

@@ -1,0 +1,5 @@
+dataset,pred_len,variant,seed,mse,mae,rmse,params,epochs,time
+electricity,96,learned_gate,123,0.165414,0.258426,0.406711,186404,15,1409.0
+electricity,192,learned_gate,123,0.174550,0.265197,0.417792,223364,15,1244.1
+traffic,96,learned_gate,123,0.502198,0.335520,0.708659,776126,22,3064.6
+traffic,192,learned_gate,123,0.525726,0.349091,0.725070,794654,17,1426.8

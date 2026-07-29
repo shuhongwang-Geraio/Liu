@@ -1,0 +1,628 @@
+  Epoch   1/50 | Train Loss: 0.517146 | Val Loss: 0.781553 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.408177 | Val Loss: 0.713109 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.382312 | Val Loss: 0.704074 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.372059 | Val Loss: 0.696823 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.365963 | Val Loss: 0.693298 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.361049 | Val Loss: 0.702690 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.356691 | Val Loss: 0.691043 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.352682 | Val Loss: 0.682466 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.348461 | Val Loss: 0.688904 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.344736 | Val Loss: 0.711334 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.341120 | Val Loss: 0.723260 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.339103 | Val Loss: 0.702107 | LR: 9.09e-04
+  Epoch  13/50 | Train Loss: 0.335292 | Val Loss: 0.705571 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.333646 | Val Loss: 0.707414 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.330793 | Val Loss: 0.714275 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.328388 | Val Loss: 0.710648 | LR: 9.98e-04
+  Early stopping at epoch 16
+  [1/33] etth1 pl96 patchtst s123 -> MSE=0.37747 MAE=0.39754 (41s)
+  Epoch   1/50 | Train Loss: 0.487719 | Val Loss: 0.825266 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.399737 | Val Loss: 0.730064 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.374243 | Val Loss: 0.702608 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.365713 | Val Loss: 0.689794 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.361127 | Val Loss: 0.691475 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.356093 | Val Loss: 0.685675 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.349794 | Val Loss: 0.692882 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.343026 | Val Loss: 0.712840 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.337886 | Val Loss: 0.705766 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.333465 | Val Loss: 0.704080 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.329283 | Val Loss: 0.690908 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.325342 | Val Loss: 0.715085 | LR: 9.09e-04
+  Epoch  13/50 | Train Loss: 0.321574 | Val Loss: 0.690465 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.317099 | Val Loss: 0.704219 | LR: 9.90e-04
+  Early stopping at epoch 14
+  [2/33] etth1 pl96 no_gate s123 -> MSE=0.38035 MAE=0.39792 (44s)
+  Epoch   1/50 | Train Loss: 0.508046 | Val Loss: 0.787230 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.403734 | Val Loss: 0.714734 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.379529 | Val Loss: 0.697850 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.370171 | Val Loss: 0.692097 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.364118 | Val Loss: 0.687991 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.358831 | Val Loss: 0.696993 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.353008 | Val Loss: 0.692547 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.345988 | Val Loss: 0.703238 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.340626 | Val Loss: 0.701173 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.335874 | Val Loss: 0.707134 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.331121 | Val Loss: 0.715895 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.326660 | Val Loss: 0.733058 | LR: 9.09e-04
+  Epoch  13/50 | Train Loss: 0.322669 | Val Loss: 0.727093 | LR: 9.59e-04
+  Early stopping at epoch 13
+  [3/33] etth1 pl96 full_v2 s123 -> MSE=0.38409 MAE=0.39616 (52s)
+  Epoch   1/50 | Train Loss: 0.572802 | Val Loss: 1.067164 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.468897 | Val Loss: 1.014832 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.445097 | Val Loss: 1.002019 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.435968 | Val Loss: 0.994667 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.430555 | Val Loss: 0.994948 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.425275 | Val Loss: 0.989219 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.419981 | Val Loss: 1.003547 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.414204 | Val Loss: 1.006722 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.409699 | Val Loss: 1.014998 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.404924 | Val Loss: 1.014251 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.400608 | Val Loss: 1.013898 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.396410 | Val Loss: 1.031834 | LR: 9.09e-04
+  Epoch  13/50 | Train Loss: 0.391619 | Val Loss: 1.039761 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.388715 | Val Loss: 1.027518 | LR: 9.90e-04
+  Early stopping at epoch 14
+  [4/33] etth1 pl192 patchtst s123 -> MSE=0.43407 MAE=0.42702 (36s)
+  Epoch   1/50 | Train Loss: 0.539291 | Val Loss: 1.112839 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.458040 | Val Loss: 1.028271 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.435524 | Val Loss: 1.003652 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.426844 | Val Loss: 0.998210 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.419406 | Val Loss: 0.996170 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.412525 | Val Loss: 1.001894 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.405811 | Val Loss: 1.015083 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.399287 | Val Loss: 1.020611 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.392898 | Val Loss: 1.046288 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.387598 | Val Loss: 1.009458 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.381612 | Val Loss: 1.016972 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.377663 | Val Loss: 1.012423 | LR: 9.09e-04
+  Epoch  13/50 | Train Loss: 0.372965 | Val Loss: 1.016810 | LR: 9.59e-04
+  Early stopping at epoch 13
+  [5/33] etth1 pl192 no_gate s123 -> MSE=0.44199 MAE=0.43542 (41s)
+  Epoch   1/50 | Train Loss: 0.566835 | Val Loss: 1.082537 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.465935 | Val Loss: 1.011748 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.442421 | Val Loss: 0.998194 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.433987 | Val Loss: 0.992435 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.428717 | Val Loss: 0.993041 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.423146 | Val Loss: 1.003658 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.414801 | Val Loss: 1.003600 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.405046 | Val Loss: 1.009932 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.397108 | Val Loss: 1.025893 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.391459 | Val Loss: 1.053676 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.385026 | Val Loss: 1.044231 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.379093 | Val Loss: 1.039938 | LR: 9.09e-04
+  Early stopping at epoch 12
+  [6/33] etth1 pl192 full_v2 s123 -> MSE=0.43858 MAE=0.42760 (49s)
+  Epoch   1/50 | Train Loss: 0.577179 | Val Loss: 1.200610 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.489346 | Val Loss: 1.163994 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.472092 | Val Loss: 1.186318 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.460310 | Val Loss: 1.257535 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.449291 | Val Loss: 1.290235 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.437028 | Val Loss: 1.353733 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.427878 | Val Loss: 1.319516 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.418383 | Val Loss: 1.272321 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.410958 | Val Loss: 1.390533 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.399029 | Val Loss: 1.360774 | LR: 7.60e-04
+  Early stopping at epoch 10
+  [7/33] etth1 pl336 patchtst s123 -> MSE=0.43691 MAE=0.43786 (27s)
+  Epoch   1/50 | Train Loss: 0.543134 | Val Loss: 1.208950 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.473504 | Val Loss: 1.183054 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.455072 | Val Loss: 1.202791 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.438158 | Val Loss: 1.223190 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.422750 | Val Loss: 1.254278 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.408964 | Val Loss: 1.313681 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.394738 | Val Loss: 1.265762 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.381831 | Val Loss: 1.296318 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.371272 | Val Loss: 1.321885 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.362312 | Val Loss: 1.324713 | LR: 7.60e-04
+  Early stopping at epoch 10
+  [8/33] etth1 pl336 no_gate s123 -> MSE=0.44637 MAE=0.44462 (32s)
+  Epoch   1/50 | Train Loss: 0.566841 | Val Loss: 1.206470 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.486683 | Val Loss: 1.189678 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.468858 | Val Loss: 1.194568 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.456762 | Val Loss: 1.228030 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.441787 | Val Loss: 1.302455 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.422169 | Val Loss: 1.390567 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.406528 | Val Loss: 1.420473 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.393169 | Val Loss: 1.441601 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.378922 | Val Loss: 1.457499 | LR: 6.69e-04
+  Epoch  10/50 | Train Loss: 0.368069 | Val Loss: 1.444524 | LR: 7.60e-04
+  Early stopping at epoch 10
+  [9/33] etth1 pl336 full_v2 s123 -> MSE=0.43746 MAE=0.43829 (41s)
+  Epoch   1/50 | Train Loss: 0.386259 | Val Loss: 0.408556 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.342063 | Val Loss: 0.398345 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.326158 | Val Loss: 0.393632 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.306805 | Val Loss: 0.400318 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.295424 | Val Loss: 0.395011 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.286081 | Val Loss: 0.404456 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.279938 | Val Loss: 0.401396 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.275527 | Val Loss: 0.398485 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.271711 | Val Loss: 0.400318 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.268534 | Val Loss: 0.388529 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.265939 | Val Loss: 0.396468 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.263801 | Val Loss: 0.400543 | LR: 9.08e-04
+  Epoch  13/50 | Train Loss: 0.261209 | Val Loss: 0.398919 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.258597 | Val Loss: 0.404428 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.256237 | Val Loss: 0.389728 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.254056 | Val Loss: 0.403624 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.252099 | Val Loss: 0.391232 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.250735 | Val Loss: 0.392379 | LR: 9.82e-04
+  Early stopping at epoch 18
+  [10/33] ettm1 pl96 patchtst s123 -> MSE=0.32059 MAE=0.36208 (175s)
+  Epoch   1/50 | Train Loss: 0.370973 | Val Loss: 0.404952 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.331736 | Val Loss: 0.402251 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.314279 | Val Loss: 0.397997 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.299186 | Val Loss: 0.409472 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.287656 | Val Loss: 0.403037 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.279263 | Val Loss: 0.401080 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.272245 | Val Loss: 0.403119 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.266809 | Val Loss: 0.394962 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.262515 | Val Loss: 0.389496 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.258590 | Val Loss: 0.395829 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.254518 | Val Loss: 0.383513 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.250767 | Val Loss: 0.394798 | LR: 9.08e-04
+  Epoch  13/50 | Train Loss: 0.247463 | Val Loss: 0.384143 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.244279 | Val Loss: 0.396493 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.241104 | Val Loss: 0.388794 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.238078 | Val Loss: 0.383834 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.235224 | Val Loss: 0.385372 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.232599 | Val Loss: 0.394563 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.229984 | Val Loss: 0.395691 | LR: 9.68e-04
+  Early stopping at epoch 19
+  [11/33] ettm1 pl96 no_gate s123 -> MSE=0.31528 MAE=0.35242 (225s)
+  Epoch   1/50 | Train Loss: 0.378461 | Val Loss: 0.405140 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.336481 | Val Loss: 0.394198 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.309516 | Val Loss: 0.399958 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.290896 | Val Loss: 0.407962 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.282135 | Val Loss: 0.403288 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.274604 | Val Loss: 0.402786 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.266878 | Val Loss: 0.395414 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.260363 | Val Loss: 0.408791 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.254233 | Val Loss: 0.387660 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.249097 | Val Loss: 0.389490 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.243472 | Val Loss: 0.383219 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.238920 | Val Loss: 0.390510 | LR: 9.08e-04
+  Epoch  13/50 | Train Loss: 0.234973 | Val Loss: 0.381557 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.230881 | Val Loss: 0.379292 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.227652 | Val Loss: 0.382226 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.224336 | Val Loss: 0.379808 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.222028 | Val Loss: 0.380566 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.218976 | Val Loss: 0.380728 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.216272 | Val Loss: 0.378954 | LR: 9.68e-04
+  Epoch  20/50 | Train Loss: 0.214495 | Val Loss: 0.380220 | LR: 9.50e-04
+  Epoch  21/50 | Train Loss: 0.212548 | Val Loss: 0.390681 | LR: 9.29e-04
+  Epoch  22/50 | Train Loss: 0.210567 | Val Loss: 0.383259 | LR: 9.04e-04
+  Epoch  23/50 | Train Loss: 0.208404 | Val Loss: 0.379158 | LR: 8.77e-04
+  Epoch  24/50 | Train Loss: 0.206314 | Val Loss: 0.392329 | LR: 8.46e-04
+  Epoch  25/50 | Train Loss: 0.204583 | Val Loss: 0.382849 | LR: 8.12e-04
+  Epoch  26/50 | Train Loss: 0.202679 | Val Loss: 0.387344 | LR: 7.75e-04
+  Epoch  27/50 | Train Loss: 0.201331 | Val Loss: 0.394893 | LR: 7.37e-04
+  Early stopping at epoch 27
+  [12/33] ettm1 pl96 full_v2 s123 -> MSE=0.30806 MAE=0.34937 (414s)
+  Epoch   1/50 | Train Loss: 0.413980 | Val Loss: 0.534205 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.373172 | Val Loss: 0.527825 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.361759 | Val Loss: 0.529367 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.349354 | Val Loss: 0.522247 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.338352 | Val Loss: 0.513565 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.330966 | Val Loss: 0.519520 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.325756 | Val Loss: 0.515094 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.321332 | Val Loss: 0.521978 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.317986 | Val Loss: 0.508472 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.315128 | Val Loss: 0.503594 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.312500 | Val Loss: 0.507410 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.310292 | Val Loss: 0.506959 | LR: 9.08e-04
+  Epoch  13/50 | Train Loss: 0.308107 | Val Loss: 0.509012 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.306010 | Val Loss: 0.492426 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.304374 | Val Loss: 0.496355 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.302703 | Val Loss: 0.512998 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.301009 | Val Loss: 0.499305 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.299425 | Val Loss: 0.504125 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.298394 | Val Loss: 0.501495 | LR: 9.68e-04
+  Epoch  20/50 | Train Loss: 0.297344 | Val Loss: 0.495660 | LR: 9.50e-04
+  Epoch  21/50 | Train Loss: 0.295997 | Val Loss: 0.496989 | LR: 9.29e-04
+  Epoch  22/50 | Train Loss: 0.295117 | Val Loss: 0.506511 | LR: 9.04e-04
+  Early stopping at epoch 22
+  [13/33] ettm1 pl192 patchtst s123 -> MSE=0.35686 MAE=0.37898 (214s)
+  Epoch   1/50 | Train Loss: 0.400434 | Val Loss: 0.534664 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.364712 | Val Loss: 0.527111 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.352206 | Val Loss: 0.527298 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.341345 | Val Loss: 0.529341 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.331541 | Val Loss: 0.521975 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.324236 | Val Loss: 0.529389 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.318791 | Val Loss: 0.518132 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.314075 | Val Loss: 0.519891 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.310058 | Val Loss: 0.513250 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.305951 | Val Loss: 0.505866 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.302234 | Val Loss: 0.509772 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.298550 | Val Loss: 0.506730 | LR: 9.08e-04
+  Epoch  13/50 | Train Loss: 0.295086 | Val Loss: 0.506582 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.291978 | Val Loss: 0.501674 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.288655 | Val Loss: 0.508551 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.286376 | Val Loss: 0.493884 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.283874 | Val Loss: 0.498092 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.280717 | Val Loss: 0.493283 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.278718 | Val Loss: 0.500695 | LR: 9.68e-04
+  Epoch  20/50 | Train Loss: 0.277221 | Val Loss: 0.504238 | LR: 9.50e-04
+  Epoch  21/50 | Train Loss: 0.275284 | Val Loss: 0.503530 | LR: 9.29e-04
+  Epoch  22/50 | Train Loss: 0.273514 | Val Loss: 0.514942 | LR: 9.04e-04
+  Epoch  23/50 | Train Loss: 0.271773 | Val Loss: 0.497793 | LR: 8.77e-04
+  Epoch  24/50 | Train Loss: 0.270444 | Val Loss: 0.508676 | LR: 8.46e-04
+  Epoch  25/50 | Train Loss: 0.268725 | Val Loss: 0.515730 | LR: 8.12e-04
+  Epoch  26/50 | Train Loss: 0.267325 | Val Loss: 0.506322 | LR: 7.75e-04
+  Early stopping at epoch 26
+  [14/33] ettm1 pl192 no_gate s123 -> MSE=0.36055 MAE=0.38045 (308s)
+  Epoch   1/50 | Train Loss: 0.407855 | Val Loss: 0.537565 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.371424 | Val Loss: 0.525372 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.354105 | Val Loss: 0.523698 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.338925 | Val Loss: 0.519022 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.329997 | Val Loss: 0.521871 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.323352 | Val Loss: 0.517925 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.317277 | Val Loss: 0.516731 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.311936 | Val Loss: 0.513767 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.306797 | Val Loss: 0.506642 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.301918 | Val Loss: 0.502855 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.297158 | Val Loss: 0.499115 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.292600 | Val Loss: 0.488313 | LR: 9.08e-04
+  Epoch  13/50 | Train Loss: 0.288614 | Val Loss: 0.501665 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.284612 | Val Loss: 0.501732 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.280538 | Val Loss: 0.500152 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.277499 | Val Loss: 0.499639 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.274184 | Val Loss: 0.499733 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.271186 | Val Loss: 0.495734 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.268222 | Val Loss: 0.500077 | LR: 9.68e-04
+  Epoch  20/50 | Train Loss: 0.266262 | Val Loss: 0.505095 | LR: 9.50e-04
+  Early stopping at epoch 20
+  [15/33] ettm1 pl192 full_v2 s123 -> MSE=0.35482 MAE=0.37893 (310s)
+  Epoch   1/50 | Train Loss: 0.389139 | Val Loss: 0.657051 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.358211 | Val Loss: 0.654802 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.350184 | Val Loss: 0.647699 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.341909 | Val Loss: 0.640375 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.334101 | Val Loss: 0.647485 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.326819 | Val Loss: 0.659327 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.320157 | Val Loss: 0.686963 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.313659 | Val Loss: 0.667915 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.307523 | Val Loss: 0.674868 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.302106 | Val Loss: 0.689949 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.297719 | Val Loss: 0.700081 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.293278 | Val Loss: 0.700649 | LR: 9.08e-04
+  Early stopping at epoch 12
+  [16/33] ettm1 pl336 patchtst s123 -> MSE=0.36460 MAE=0.38966 (123s)
+  Epoch   1/50 | Train Loss: 0.377692 | Val Loss: 0.654069 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.349506 | Val Loss: 0.647588 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.336828 | Val Loss: 0.640459 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.328860 | Val Loss: 0.653593 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.321244 | Val Loss: 0.667253 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.310700 | Val Loss: 0.660048 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.300827 | Val Loss: 0.678992 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.292465 | Val Loss: 0.671888 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.283411 | Val Loss: 0.679613 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.275395 | Val Loss: 0.679903 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.268519 | Val Loss: 0.662775 | LR: 8.41e-04
+  Early stopping at epoch 11
+  [17/33] ettm1 pl336 no_gate s123 -> MSE=0.36275 MAE=0.38745 (136s)
+  Epoch   1/50 | Train Loss: 0.384780 | Val Loss: 0.650816 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.356052 | Val Loss: 0.656901 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.343485 | Val Loss: 0.662422 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.330573 | Val Loss: 0.680157 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.322526 | Val Loss: 0.668252 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.314542 | Val Loss: 0.681570 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.305580 | Val Loss: 0.710104 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.295681 | Val Loss: 0.719725 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.286657 | Val Loss: 0.704941 | LR: 6.68e-04
+  Early stopping at epoch 9
+  [18/33] ettm1 pl336 full_v2 s123 -> MSE=0.38050 MAE=0.39509 (146s)
+  Epoch   1/50 | Train Loss: 0.538409 | Val Loss: 0.388262 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.490266 | Val Loss: 0.374965 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.474277 | Val Loss: 0.358330 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.457873 | Val Loss: 0.342791 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.445881 | Val Loss: 0.338518 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.437024 | Val Loss: 0.334576 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.431674 | Val Loss: 0.332962 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.429003 | Val Loss: 0.332816 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.426385 | Val Loss: 0.335249 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.424863 | Val Loss: 0.334043 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.422213 | Val Loss: 0.330594 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.422515 | Val Loss: 0.331448 | LR: 9.08e-04
+  Epoch  13/50 | Train Loss: 0.419929 | Val Loss: 0.332712 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.419146 | Val Loss: 0.332495 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.424757 | Val Loss: 0.339759 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.417582 | Val Loss: 0.339028 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.415851 | Val Loss: 0.329080 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.414881 | Val Loss: 0.327667 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.414526 | Val Loss: 0.326466 | LR: 9.68e-04
+  Epoch  20/50 | Train Loss: 0.414437 | Val Loss: 0.329340 | LR: 9.50e-04
+  Epoch  21/50 | Train Loss: 0.410388 | Val Loss: 0.326210 | LR: 9.29e-04
+  Epoch  22/50 | Train Loss: 0.410679 | Val Loss: 0.328947 | LR: 9.04e-04
+  Epoch  23/50 | Train Loss: 0.408653 | Val Loss: 0.325811 | LR: 8.77e-04
+  Epoch  24/50 | Train Loss: 0.407652 | Val Loss: 0.327682 | LR: 8.46e-04
+  Epoch  25/50 | Train Loss: 0.407852 | Val Loss: 0.326821 | LR: 8.12e-04
+  Epoch  26/50 | Train Loss: 0.404433 | Val Loss: 0.327676 | LR: 7.75e-04
+  Epoch  27/50 | Train Loss: 0.404493 | Val Loss: 0.327838 | LR: 7.37e-04
+  Epoch  28/50 | Train Loss: 0.404072 | Val Loss: 0.326357 | LR: 6.96e-04
+  Epoch  29/50 | Train Loss: 0.403452 | Val Loss: 0.329997 | LR: 6.54e-04
+  Epoch  30/50 | Train Loss: 0.401963 | Val Loss: 0.326827 | LR: 6.11e-04
+  Epoch  31/50 | Train Loss: 0.400427 | Val Loss: 0.326545 | LR: 5.67e-04
+  Early stopping at epoch 31
+  [19/33] weather pl96 patchtst s123 -> MSE=0.14977 MAE=0.19566 (322s)
+  Epoch   1/50 | Train Loss: 0.527660 | Val Loss: 0.386337 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.478200 | Val Loss: 0.362960 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.461805 | Val Loss: 0.347074 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.442635 | Val Loss: 0.342300 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.431504 | Val Loss: 0.338263 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.426603 | Val Loss: 0.344157 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.422066 | Val Loss: 0.336006 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.414533 | Val Loss: 0.329632 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.410328 | Val Loss: 0.332831 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.406303 | Val Loss: 0.327690 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.402682 | Val Loss: 0.322538 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.402040 | Val Loss: 0.327483 | LR: 9.08e-04
+  Epoch  13/50 | Train Loss: 0.394188 | Val Loss: 0.325332 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.391054 | Val Loss: 0.324211 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.386205 | Val Loss: 0.324666 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.381613 | Val Loss: 0.322420 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.379034 | Val Loss: 0.326004 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.376115 | Val Loss: 0.324169 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.369816 | Val Loss: 0.317612 | LR: 9.68e-04
+  Epoch  20/50 | Train Loss: 0.366256 | Val Loss: 0.317395 | LR: 9.50e-04
+  Epoch  21/50 | Train Loss: 0.362101 | Val Loss: 0.318143 | LR: 9.29e-04
+  Epoch  22/50 | Train Loss: 0.357861 | Val Loss: 0.326367 | LR: 9.04e-04
+  Epoch  23/50 | Train Loss: 0.356255 | Val Loss: 0.327942 | LR: 8.77e-04
+  Epoch  24/50 | Train Loss: 0.353077 | Val Loss: 0.320276 | LR: 8.46e-04
+  Epoch  25/50 | Train Loss: 0.349139 | Val Loss: 0.322454 | LR: 8.12e-04
+  Epoch  26/50 | Train Loss: 0.346004 | Val Loss: 0.330009 | LR: 7.75e-04
+  Epoch  27/50 | Train Loss: 0.344004 | Val Loss: 0.329200 | LR: 7.37e-04
+  Epoch  28/50 | Train Loss: 0.341064 | Val Loss: 0.320805 | LR: 6.96e-04
+  Early stopping at epoch 28
+  [20/33] weather pl96 no_gate s123 -> MSE=0.14955 MAE=0.19468 (278s)
+  Epoch   1/50 | Train Loss: 0.534095 | Val Loss: 0.388457 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.486917 | Val Loss: 0.369041 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.467673 | Val Loss: 0.348473 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.448322 | Val Loss: 0.335961 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.435415 | Val Loss: 0.334285 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.428636 | Val Loss: 0.337537 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.422690 | Val Loss: 0.332535 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.417296 | Val Loss: 0.334467 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.412489 | Val Loss: 0.333584 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.408445 | Val Loss: 0.332664 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.406465 | Val Loss: 0.334745 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.400729 | Val Loss: 0.333918 | LR: 9.08e-04
+  Epoch  13/50 | Train Loss: 0.397495 | Val Loss: 0.348406 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.392899 | Val Loss: 0.340947 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.388463 | Val Loss: 0.324986 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.384857 | Val Loss: 0.322031 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.380907 | Val Loss: 0.327165 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.377010 | Val Loss: 0.316809 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.372858 | Val Loss: 0.328241 | LR: 9.68e-04
+  Epoch  20/50 | Train Loss: 0.369955 | Val Loss: 0.322759 | LR: 9.50e-04
+  Epoch  21/50 | Train Loss: 0.367820 | Val Loss: 0.332268 | LR: 9.29e-04
+  Epoch  22/50 | Train Loss: 0.363794 | Val Loss: 0.320376 | LR: 9.04e-04
+  Epoch  23/50 | Train Loss: 0.359021 | Val Loss: 0.323827 | LR: 8.77e-04
+  Epoch  24/50 | Train Loss: 0.357930 | Val Loss: 0.331076 | LR: 8.46e-04
+  Epoch  25/50 | Train Loss: 0.355362 | Val Loss: 0.330349 | LR: 8.12e-04
+  Epoch  26/50 | Train Loss: 0.352038 | Val Loss: 0.330306 | LR: 7.75e-04
+  Early stopping at epoch 26
+  [21/33] weather pl96 full_v2 s123 -> MSE=0.14519 MAE=0.19333 (321s)
+  Epoch   1/50 | Train Loss: 0.596844 | Val Loss: 0.453954 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.554407 | Val Loss: 0.442072 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.539723 | Val Loss: 0.429402 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.524233 | Val Loss: 0.416264 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.514927 | Val Loss: 0.409256 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.505471 | Val Loss: 0.402071 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.497045 | Val Loss: 0.403624 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.493564 | Val Loss: 0.396271 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.492695 | Val Loss: 0.392998 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.489938 | Val Loss: 0.401730 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.489098 | Val Loss: 0.394061 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.487833 | Val Loss: 0.389411 | LR: 9.08e-04
+  Epoch  13/50 | Train Loss: 0.486465 | Val Loss: 0.393385 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.485898 | Val Loss: 0.389168 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.483107 | Val Loss: 0.391932 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.481987 | Val Loss: 0.390115 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.480226 | Val Loss: 0.386239 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.478821 | Val Loss: 0.388950 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.477284 | Val Loss: 0.391083 | LR: 9.68e-04
+  Epoch  20/50 | Train Loss: 0.475321 | Val Loss: 0.386001 | LR: 9.50e-04
+  Epoch  21/50 | Train Loss: 0.474140 | Val Loss: 0.386189 | LR: 9.29e-04
+  Epoch  22/50 | Train Loss: 0.472952 | Val Loss: 0.386574 | LR: 9.04e-04
+  Epoch  23/50 | Train Loss: 0.470825 | Val Loss: 0.387902 | LR: 8.77e-04
+  Epoch  24/50 | Train Loss: 0.470270 | Val Loss: 0.386636 | LR: 8.46e-04
+  Epoch  25/50 | Train Loss: 0.468857 | Val Loss: 0.387090 | LR: 8.12e-04
+  Epoch  26/50 | Train Loss: 0.467271 | Val Loss: 0.388593 | LR: 7.75e-04
+  Epoch  27/50 | Train Loss: 0.466424 | Val Loss: 0.390388 | LR: 7.37e-04
+  Epoch  28/50 | Train Loss: 0.465331 | Val Loss: 0.388329 | LR: 6.96e-04
+  Early stopping at epoch 28
+  [22/33] weather pl192 patchtst s123 -> MSE=0.19432 MAE=0.23516 (216s)
+  Epoch   1/50 | Train Loss: 0.589685 | Val Loss: 0.455429 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.543851 | Val Loss: 0.435196 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.524627 | Val Loss: 0.418539 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.510751 | Val Loss: 0.408115 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.499665 | Val Loss: 0.403551 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.492460 | Val Loss: 0.407513 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.487817 | Val Loss: 0.401508 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.481070 | Val Loss: 0.416914 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.475755 | Val Loss: 0.405798 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.470467 | Val Loss: 0.405810 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.461779 | Val Loss: 0.399451 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.457253 | Val Loss: 0.402853 | LR: 9.08e-04
+  Epoch  13/50 | Train Loss: 0.451506 | Val Loss: 0.400910 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.443610 | Val Loss: 0.394856 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.436601 | Val Loss: 0.397838 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.430347 | Val Loss: 0.403223 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.425455 | Val Loss: 0.404622 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.421151 | Val Loss: 0.400662 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.414970 | Val Loss: 0.395935 | LR: 9.68e-04
+  Epoch  20/50 | Train Loss: 0.409973 | Val Loss: 0.401617 | LR: 9.50e-04
+  Epoch  21/50 | Train Loss: 0.405919 | Val Loss: 0.398393 | LR: 9.29e-04
+  Epoch  22/50 | Train Loss: 0.401908 | Val Loss: 0.400793 | LR: 9.04e-04
+  Early stopping at epoch 22
+  [23/33] weather pl192 no_gate s123 -> MSE=0.20258 MAE=0.24337 (205s)
+  Epoch   1/50 | Train Loss: 0.597522 | Val Loss: 0.454979 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.551910 | Val Loss: 0.436713 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.531969 | Val Loss: 0.421926 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.514671 | Val Loss: 0.410909 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.502248 | Val Loss: 0.407272 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.493443 | Val Loss: 0.402727 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.489238 | Val Loss: 0.400031 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.484386 | Val Loss: 0.406855 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.480589 | Val Loss: 0.399696 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.476318 | Val Loss: 0.403355 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.471495 | Val Loss: 0.407476 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.465545 | Val Loss: 0.412426 | LR: 9.08e-04
+  Epoch  13/50 | Train Loss: 0.462078 | Val Loss: 0.391773 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.454636 | Val Loss: 0.396139 | LR: 9.90e-04
+  Epoch  15/50 | Train Loss: 0.449027 | Val Loss: 0.402709 | LR: 1.00e-03
+  Epoch  16/50 | Train Loss: 0.448118 | Val Loss: 0.392846 | LR: 9.98e-04
+  Epoch  17/50 | Train Loss: 0.436444 | Val Loss: 0.418182 | LR: 9.92e-04
+  Epoch  18/50 | Train Loss: 0.432671 | Val Loss: 0.404208 | LR: 9.82e-04
+  Epoch  19/50 | Train Loss: 0.426636 | Val Loss: 0.407661 | LR: 9.68e-04
+  Epoch  20/50 | Train Loss: 0.422005 | Val Loss: 0.408205 | LR: 9.50e-04
+  Epoch  21/50 | Train Loss: 0.417275 | Val Loss: 0.407632 | LR: 9.29e-04
+  Early stopping at epoch 21
+  [24/33] weather pl192 full_v2 s123 -> MSE=0.19274 MAE=0.23542 (269s)
+  Epoch   1/50 | Train Loss: 0.592035 | Val Loss: 0.485118 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.548606 | Val Loss: 0.471852 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.537711 | Val Loss: 0.464061 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.531586 | Val Loss: 0.455551 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.522095 | Val Loss: 0.454345 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.514939 | Val Loss: 0.452862 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.509548 | Val Loss: 0.466181 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.503638 | Val Loss: 0.467797 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.498837 | Val Loss: 0.472796 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.492704 | Val Loss: 0.458398 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.486643 | Val Loss: 0.468216 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.481400 | Val Loss: 0.477857 | LR: 9.08e-04
+  Epoch  13/50 | Train Loss: 0.475637 | Val Loss: 0.477422 | LR: 9.59e-04
+  Epoch  14/50 | Train Loss: 0.469095 | Val Loss: 0.472817 | LR: 9.90e-04
+  Early stopping at epoch 14
+  [25/33] weather pl336 patchtst s123 -> MSE=0.22049 MAE=0.25837 (146s)
+  Epoch   1/50 | Train Loss: 0.563766 | Val Loss: 0.475728 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.535461 | Val Loss: 0.464013 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.526493 | Val Loss: 0.460532 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.516169 | Val Loss: 0.458971 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.500453 | Val Loss: 0.461877 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.485644 | Val Loss: 0.535306 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.469464 | Val Loss: 0.494452 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.454107 | Val Loss: 0.515389 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.439609 | Val Loss: 0.539689 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.426461 | Val Loss: 0.565526 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.413870 | Val Loss: 0.547050 | LR: 8.41e-04
+  Epoch  12/50 | Train Loss: 0.402521 | Val Loss: 0.504514 | LR: 9.08e-04
+  Early stopping at epoch 12
+  [26/33] weather pl336 no_gate s123 -> MSE=0.22054 MAE=0.26048 (137s)
+  Epoch   1/50 | Train Loss: 0.580977 | Val Loss: 0.478564 | LR: 5.05e-05
+  Epoch   2/50 | Train Loss: 0.542328 | Val Loss: 0.464394 | LR: 8.15e-05
+  Epoch   3/50 | Train Loss: 0.531157 | Val Loss: 0.460643 | LR: 1.32e-04
+  Epoch   4/50 | Train Loss: 0.521037 | Val Loss: 0.475288 | LR: 1.99e-04
+  Epoch   5/50 | Train Loss: 0.510725 | Val Loss: 0.480001 | LR: 2.80e-04
+  Epoch   6/50 | Train Loss: 0.500685 | Val Loss: 0.488186 | LR: 3.72e-04
+  Epoch   7/50 | Train Loss: 0.486439 | Val Loss: 0.483653 | LR: 4.70e-04
+  Epoch   8/50 | Train Loss: 0.472290 | Val Loss: 0.490349 | LR: 5.70e-04
+  Epoch   9/50 | Train Loss: 0.458395 | Val Loss: 0.500526 | LR: 6.68e-04
+  Epoch  10/50 | Train Loss: 0.445704 | Val Loss: 0.511936 | LR: 7.60e-04
+  Epoch  11/50 | Train Loss: 0.432965 | Val Loss: 0.515302 | LR: 8.41e-04
+  Early stopping at epoch 11
+  [27/33] weather pl336 full_v2 s123 -> MSE=0.22503 MAE=0.26393 (177s)
+  Epoch   1/30 | Train Loss: 0.350146 | Val Loss: 0.202178 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.230548 | Val Loss: 0.185534 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.210177 | Val Loss: 0.175150 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.197112 | Val Loss: 0.164478 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.186369 | Val Loss: 0.158734 | LR: 6.03e-04
+  Epoch   6/30 | Train Loss: 0.180973 | Val Loss: 0.155848 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.178495 | Val Loss: 0.156669 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.176782 | Val Loss: 0.154802 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.175347 | Val Loss: 0.159060 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.174048 | Val Loss: 0.161948 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.173134 | Val Loss: 0.167270 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.172333 | Val Loss: 0.166419 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.171650 | Val Loss: 0.170795 | LR: 9.13e-04
+  Epoch  14/30 | Train Loss: 0.170996 | Val Loss: 0.172735 | LR: 8.66e-04
+  Epoch  15/30 | Train Loss: 0.170443 | Val Loss: 0.172943 | LR: 8.12e-04
+  Epoch  16/30 | Train Loss: 0.169930 | Val Loss: 0.173205 | LR: 7.50e-04
+  Early stopping at epoch 16
+  [28/33] electricity pl96 patchtst s123 -> MSE=0.16982 MAE=0.25896 (247s)
+  Epoch   1/30 | Train Loss: 0.339589 | Val Loss: 0.208549 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.223631 | Val Loss: 0.183605 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.204408 | Val Loss: 0.169804 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.188136 | Val Loss: 0.159359 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.177971 | Val Loss: 0.152976 | LR: 6.03e-04
+  Epoch   6/30 | Train Loss: 0.173182 | Val Loss: 0.149921 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.170379 | Val Loss: 0.148861 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.168126 | Val Loss: 0.152254 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.166296 | Val Loss: 0.155543 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.164715 | Val Loss: 0.158822 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.163400 | Val Loss: 0.163951 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.162161 | Val Loss: 0.160994 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.161306 | Val Loss: 0.163600 | LR: 9.13e-04
+  Epoch  14/30 | Train Loss: 0.160537 | Val Loss: 0.163308 | LR: 8.66e-04
+  Epoch  15/30 | Train Loss: 0.159853 | Val Loss: 0.166498 | LR: 8.12e-04
+  Early stopping at epoch 15
+  [29/33] electricity pl96 no_gate s123 -> MSE=0.16452 MAE=0.25666 (297s)
+  Epoch   1/30 | Train Loss: 0.344326 | Val Loss: 0.202781 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.226950 | Val Loss: 0.183880 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.205821 | Val Loss: 0.172023 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.189086 | Val Loss: 0.161253 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.175777 | Val Loss: 0.158242 | LR: 6.03e-04
+  Epoch   6/30 | Train Loss: 0.169390 | Val Loss: 0.152720 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.165349 | Val Loss: 0.153965 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.161989 | Val Loss: 0.150728 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.159755 | Val Loss: 0.148962 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.157791 | Val Loss: 0.151817 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.156133 | Val Loss: 0.153711 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.154787 | Val Loss: 0.155812 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.153676 | Val Loss: 0.159294 | LR: 9.13e-04
+  Epoch  14/30 | Train Loss: 0.152520 | Val Loss: 0.153157 | LR: 8.66e-04
+  Epoch  15/30 | Train Loss: 0.151623 | Val Loss: 0.160640 | LR: 8.12e-04
+  Epoch  16/30 | Train Loss: 0.150729 | Val Loss: 0.164859 | LR: 7.50e-04
+  Epoch  17/30 | Train Loss: 0.149935 | Val Loss: 0.166080 | LR: 6.83e-04
+  Early stopping at epoch 17
+  [30/33] electricity pl96 full_v2 s123 -> MSE=0.16619 MAE=0.25664 (585s)
+  Epoch   1/30 | Train Loss: 0.345646 | Val Loss: 0.205416 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.229712 | Val Loss: 0.187915 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.210717 | Val Loss: 0.179914 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.201395 | Val Loss: 0.173797 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.194202 | Val Loss: 0.169478 | LR: 6.03e-04
+  Epoch   6/30 | Train Loss: 0.190367 | Val Loss: 0.167357 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.187435 | Val Loss: 0.167040 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.185400 | Val Loss: 0.169274 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.183882 | Val Loss: 0.169454 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.182671 | Val Loss: 0.174478 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.181708 | Val Loss: 0.175736 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.180862 | Val Loss: 0.175699 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.180282 | Val Loss: 0.176994 | LR: 9.13e-04
+  Epoch  14/30 | Train Loss: 0.179630 | Val Loss: 0.176082 | LR: 8.66e-04
+  Epoch  15/30 | Train Loss: 0.179004 | Val Loss: 0.173224 | LR: 8.12e-04
+  Early stopping at epoch 15
+  [31/33] electricity pl192 patchtst s123 -> MSE=0.17709 MAE=0.26728 (300s)
+  Epoch   1/30 | Train Loss: 0.355091 | Val Loss: 0.212049 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.225270 | Val Loss: 0.187905 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.207174 | Val Loss: 0.178832 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.196779 | Val Loss: 0.169863 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.189474 | Val Loss: 0.166352 | LR: 6.03e-04
+  Epoch   6/30 | Train Loss: 0.184568 | Val Loss: 0.162890 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.181370 | Val Loss: 0.163960 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.179376 | Val Loss: 0.167010 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.177719 | Val Loss: 0.168925 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.176547 | Val Loss: 0.173904 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.175410 | Val Loss: 0.175879 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.174546 | Val Loss: 0.176859 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.173737 | Val Loss: 0.179437 | LR: 9.13e-04
+  Epoch  14/30 | Train Loss: 0.172997 | Val Loss: 0.177501 | LR: 8.66e-04
+  Early stopping at epoch 14
+  [32/33] electricity pl192 no_gate s123 -> MSE=0.17310 MAE=0.26409 (327s)
+  Epoch   1/30 | Train Loss: 0.337892 | Val Loss: 0.206238 | LR: 6.90e-05
+  Epoch   2/30 | Train Loss: 0.227539 | Val Loss: 0.187550 | LR: 1.52e-04
+  Epoch   3/30 | Train Loss: 0.208425 | Val Loss: 0.180633 | LR: 2.80e-04
+  Epoch   4/30 | Train Loss: 0.198243 | Val Loss: 0.173659 | LR: 4.37e-04
+  Epoch   5/30 | Train Loss: 0.190595 | Val Loss: 0.168382 | LR: 6.03e-04
+  Epoch   6/30 | Train Loss: 0.183630 | Val Loss: 0.167397 | LR: 7.60e-04
+  Epoch   7/30 | Train Loss: 0.178375 | Val Loss: 0.162417 | LR: 8.88e-04
+  Epoch   8/30 | Train Loss: 0.175229 | Val Loss: 0.163539 | LR: 9.71e-04
+  Epoch   9/30 | Train Loss: 0.172610 | Val Loss: 0.167249 | LR: 1.00e-03
+  Epoch  10/30 | Train Loss: 0.170656 | Val Loss: 0.166752 | LR: 9.94e-04
+  Epoch  11/30 | Train Loss: 0.169144 | Val Loss: 0.170199 | LR: 9.78e-04
+  Epoch  12/30 | Train Loss: 0.167891 | Val Loss: 0.171353 | LR: 9.50e-04
+  Epoch  13/30 | Train Loss: 0.166741 | Val Loss: 0.176290 | LR: 9.13e-04
+  Epoch  14/30 | Train Loss: 0.165709 | Val Loss: 0.175620 | LR: 8.66e-04
+  Epoch  15/30 | Train Loss: 0.164955 | Val Loss: 0.175179 | LR: 8.12e-04
+  Early stopping at epoch 15
+  [33/33] electricity pl192 full_v2 s123 -> MSE=0.17264 MAE=0.26408 (568s)
+shard 完成: ./output_large/jobs_shard1.json (33/33 个结果, 失败见 /home/wangsh/workspace/Liu/03_experiments/CausalCIT/CausalCIT_ablation/output_large/errors_shard1.csv)
