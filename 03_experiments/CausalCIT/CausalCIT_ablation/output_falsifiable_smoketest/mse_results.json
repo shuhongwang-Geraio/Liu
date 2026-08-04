@@ -1,0 +1,134 @@
+[
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "patchtst",
+    "seed": 42,
+    "mse": 0.32599639892578125,
+    "mae": 0.39712926745414734,
+    "rmse": 0.5709609389305115,
+    "params": 225646,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "patchtst",
+    "seed": 123,
+    "mse": 0.3444940447807312,
+    "mae": 0.41211143136024475,
+    "rmse": 0.5869361758232117,
+    "params": 225646,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "full_v2",
+    "seed": 42,
+    "mse": 0.32555636763572693,
+    "mae": 0.3970540761947632,
+    "rmse": 0.570575475692749,
+    "params": 250841,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "full_v2",
+    "seed": 123,
+    "mse": 0.34364673495292664,
+    "mae": 0.41180405020713806,
+    "rmse": 0.5862138867378235,
+    "params": 250841,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "full_v2_fixed",
+    "seed": 42,
+    "mse": 0.3255256712436676,
+    "mae": 0.39708808064460754,
+    "rmse": 0.5705485939979553,
+    "params": 250841,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "full_v2_fixed",
+    "seed": 123,
+    "mse": 0.3438184857368469,
+    "mae": 0.4120573103427887,
+    "rmse": 0.5863603949546814,
+    "params": 250841,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "capacity_match",
+    "seed": 42,
+    "mse": 0.32571011781692505,
+    "mae": 0.39706864953041077,
+    "rmse": 0.5707101821899414,
+    "params": 250790,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "capacity_match",
+    "seed": 123,
+    "mse": 0.3446076512336731,
+    "mae": 0.4128532111644745,
+    "rmse": 0.5870329141616821,
+    "params": 250790,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "gate_prior_only",
+    "seed": 42,
+    "mse": 0.32554757595062256,
+    "mae": 0.397098571062088,
+    "rmse": 0.570567786693573,
+    "params": 250841,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "gate_prior_only",
+    "seed": 123,
+    "mse": 0.3437745273113251,
+    "mae": 0.4119656980037689,
+    "rmse": 0.5863229036331177,
+    "params": 250841,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "no_env",
+    "seed": 42,
+    "mse": 0.32516080141067505,
+    "mae": 0.3963659703731537,
+    "rmse": 0.5702287554740906,
+    "params": 250833,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "no_env",
+    "seed": 123,
+    "mse": 0.3383166790008545,
+    "mae": 0.40489259362220764,
+    "rmse": 0.5816499590873718,
+    "params": 250833,
+    "epochs": 2
+  }
+]
