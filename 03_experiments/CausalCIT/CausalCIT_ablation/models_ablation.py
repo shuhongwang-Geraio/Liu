@@ -155,13 +155,24 @@ class GlobalHSICGate(nn.Module):
         z_flat = self.rff_kernel(x_flat)
         rff_dim = z_flat.shape[-1]
         z = z_flat.reshape(bs, nvars, patch_num, rff_dim)
-        z_centered = z - z.mean(dim=2, keepdim=True)
+        z_centered = z - z.mean(dim=2, keepdim=True)  # [bs, nv, patch_num, rff]
 
-        # 全局HSIC: 对整个patch序列计算
-        zi = z_centered.unsqueeze(2)  # [bs, nv, 1, patch_num, rff]
-        zj = z_centered.unsqueeze(1)  # [bs, 1, nv, patch_num, rff]
-        cross_diag = (zi * zj).mean(dim=3)  # [bs, nv, nv, rff]
-        hsic_global = (cross_diag ** 2).sum(dim=-1)  # [bs, nv, nv]
+        # 全局HSIC: 对整个patch序列计算。
+        # 修复(回应评审re2 OOM): 原实现用 unsqueeze(1)/unsqueeze(2) 一次性
+        # 物化 [bs, nv, nv, patch_num, rff], 对 traffic(nv=862) 需 ~8.5GB 临时显存,
+        # 在 4090 上直接 OOM。改为逐通道块(chunk)计算 hsic_global[i,j],
+        # 峰值显存降到 O(chunk × patch_num × rff), 与通道数无关。
+        # hsic_global[i,j] = || <z_i, z_j>_patch ||^2 (线性核RFF近似),
+        # = sum_r ( sum_t z[i,t,r]*z[j,t,r] )^2 / patch_num^2。
+        hsic_global = torch.empty(bs, nvars, nvars, device=x.device, dtype=z_centered.dtype)
+        chunk = 64  # 每块的i通道数, 调小可进一步降低峰值显存
+        for i0 in range(0, nvars, chunk):
+            i1 = min(i0 + chunk, nvars)
+            zi = z_centered[:, i0:i1, :, :]                 # [bs, ci, patch_num, rff]
+            # 与所有j通道做内积: [bs, ci, nv, patch_num]
+            inner = (zi.unsqueeze(2) * z_centered.unsqueeze(1)).sum(dim=-1)
+            hsic_block = (inner ** 2).mean(dim=-1) / patch_num  # [bs, ci, nv]
+            hsic_global[:, i0:i1, :] = hsic_block
 
         # 没有跨环境稳定性概念，直接用HSIC值做门控
         hsic_norm = hsic_global / (hsic_global.max() + 1e-8)

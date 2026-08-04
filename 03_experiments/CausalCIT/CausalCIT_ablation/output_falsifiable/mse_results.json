@@ -1,0 +1,68 @@
+[
+  {
+    "dataset": "traffic",
+    "pred_len": 96,
+    "variant": "patchtst",
+    "seed": 42,
+    "mse": 0.5436436533927917,
+    "mae": 0.33429691195487976,
+    "rmse": 0.7373219728469849,
+    "params": 30556,
+    "epochs": 30
+  },
+  {
+    "dataset": "traffic",
+    "pred_len": 96,
+    "variant": "patchtst",
+    "seed": 123,
+    "mse": 0.5448704361915588,
+    "mae": 0.34763580560684204,
+    "rmse": 0.7381533980369568,
+    "params": 30556,
+    "epochs": 22
+  },
+  {
+    "dataset": "traffic",
+    "pred_len": 96,
+    "variant": "patchtst",
+    "seed": 2024,
+    "mse": 0.5473533868789673,
+    "mae": 0.34923598170280457,
+    "rmse": 0.7398333549499512,
+    "params": 30556,
+    "epochs": 22
+  },
+  {
+    "dataset": "traffic",
+    "pred_len": 96,
+    "variant": "patchtst",
+    "seed": 7,
+    "mse": 0.5551241636276245,
+    "mae": 0.3510517477989197,
+    "rmse": 0.7450665235519409,
+    "params": 30556,
+    "epochs": 20
+  },
+  {
+    "dataset": "traffic",
+    "pred_len": 96,
+    "variant": "patchtst",
+    "seed": 13,
+    "mse": 0.564082145690918,
+    "mae": 0.34830135107040405,
+    "rmse": 0.751054048538208,
+    "params": 30556,
+    "epochs": 21
+  },
+  {
+    "dataset": "traffic",
+    "pred_len": 96,
+    "variant": "patchtst",
+    "seed": 99,
+    "mse": 0.5504149198532104,
+    "mae": 0.3416414260864258,
+    "rmse": 0.7418995499610901,
+    "params": 30556,
+    "epochs": 25
+  }
+]
