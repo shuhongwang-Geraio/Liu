@@ -26,5 +26,5 @@
 
 | 编号 | 名称 | 状态 |
 |------|------|------|
-| 01 | adaptive_channel | 已展开（proposal + competitive）
+| 01 | adaptive_channel | 已展开（proposal + competitive + major improvement）
 | 02 | multiscale_rg | 完整生命周期（spark → review → final）
