@@ -8,26 +8,7 @@
 
 ---
 
-## 1. WOODS OOD 基准 —— `WOODS-main/`  (本地 ~27GB，已 gitignore)
-
-- **内容**：WOODS（时间序列 OOD 泛化标准基准，ArXiv 2203.09978）的代码 + 数据。
-  - 代码（`woods/` 包、脚本）很小；数据 `WOODS-main/data/` 约 23GB。
-- **已下载的数据**（均在 `WOODS-main/data/`，**未进 git**）：
-  - `CAP.h5` (9.1G)、`SEDFx.h5` (11G)、`PCL.h5` (3.1G) — 睡眠/生理 EEG，**分类任务**
-  - `HHAR.h5` (159M) — 手机/手表活动识别，**分类任务**
-  - `LSA64/` (8160 张 jpg) — 阿根廷手语视频帧，**分类任务**
-  - ⚠️ `data/CAP/cap.zip1ds6w8e0.part` (3.9G) 是下载中断的垃圾，可删。
-- **与本项目的关系**：WOODS 是时序 OOD 的"标准基准"，论文 related work / 对比可引用。
-  其 `AusElectricity`（电力**预测**，按月/节假日子群体漂移做 OOD）与本项目
-  `electricity_ood` 同构，但**尚未下载**（WOODS 脚本无自动 fetch，需自备澳洲电力原始数据）。
-- **重新获取**：
-  ```sh
-  cd WOODS-main && pip install -e .
-  python -m woods.scripts.download_datasets   # 默认拉 CAP/SEDFx/PCL/HHAR/LSA64
-  # 或指定: python -m woods.scripts.download_datasets CAP SEDFx
-  ```
-
-## 2. PatchTST 原始数据集 —— `01_external/PatchTST/code/dataset/`  (csv 已 gitignore)
+## 1. PatchTST 原始数据集 —— `01_external/PatchTST/code/dataset/`  (csv 已 gitignore)
 
 - **内容**：电力/交通/汇率/气温/疾病等标准预测数据集：
   `electricity.csv`(92M)、`traffic.csv`(131M)、`ETTh1/2.csv`、`ETTm1/2.csv`、
@@ -36,7 +17,7 @@
 - **重新获取**：从 PatchTST 官方仓库下载 `dataset/` 目录放入此处
   （https://github.com/yuqinie1998/PatchTST ）。
 
-## 3. 实验输出 —— `03_experiments/CausalCIT/CausalCIT_ablation/output_*/`  (报告进 git，dump 忽略)
+## 2. 实验输出 —— `03_experiments/CausalCIT/CausalCIT_ablation/output_*/`  (报告进 git，dump 忽略)
 
 - **进 git 的**：各 `large_scale_report.md` / `gate_diagnostic_report.md` / `ablation_report.md` /
   `*_report.md` / `*.txt`（显著性、门控诊断等**阶段性成果**），以及少量 `.json` 任务规格、`.png` 图。
@@ -47,11 +28,11 @@
   - `output_synood/large_scale_report.md`、`output_controls/large_scale_report.md`、`output_large/large_scale_report.md` 等 — 8-seed 提升率汇总
   - `output_multiseed/significance_report.md` — Wilcoxon + Holm 显著性
 
-## 4. OOD 数据切分 —— `03_experiments/CausalCIT/data_ood/`  (小，进 git)
+## 3. OOD 数据切分 —— `03_experiments/CausalCIT/data_ood/`  (小，进 git)
 
 - OOD 协议的训练/测试时段切分定义（时序漂移：早时段训练、晚时段测试，留 gap）。
 
-## 5. 训练实验记录 —— `03_experiments/CausalCIT/experiments/`  (小，进 git)
+## 4. 训练实验记录 —— `03_experiments/CausalCIT/experiments/`  (小，进 git)
 
 - 各日期的实验日志与配置；`*.npy` 门控矩阵 / `*.pth` 检查点已 gitignore。
 
@@ -60,7 +41,7 @@
 ### 复现流程速记
 ```sh
 # 1) 数据
-#    PatchTST dataset/  +  (可选) WOODS-main/ 按上方获取
+#    PatchTST dataset/  按上方获取
 # 2) 训练/评估 (CausalCIT_ablation)
 cd 03_experiments/CausalCIT/CausalCIT_ablation
 python run_large.py ...          # 跑 OOD 实验
