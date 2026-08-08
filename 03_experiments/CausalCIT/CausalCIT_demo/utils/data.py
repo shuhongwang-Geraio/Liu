@@ -304,6 +304,8 @@ class SyntheticOODDataset(Dataset):
                 torch.tensor(self.data[e:r], dtype=torch.float32))
 
 
-def get_dataloader(dataset, batch_size=32, shuffle=True, num_workers=0):
+def get_dataloader(dataset, batch_size=32, shuffle=True, num_workers=0, pin_memory=False):
+    """num_workers/pin_memory 默认关闭, 保证与旧结果完全一致;
+    在 GPU 训练时可传 num_workers>0/pin_memory=True 加快数据管线。"""
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
-                      num_workers=num_workers, drop_last=True)
+                      num_workers=num_workers, drop_last=True, pin_memory=pin_memory)

@@ -235,6 +235,11 @@ def _job_done_key(row):
 def _train_one(job, device, out_dir):
     # 限制本进程线程数, 避免多 shard 超订阅饿死 GPU 主线程
     torch.set_num_threads(THREADS)
+    # 修复(2026-08-08): job 在 spawn 子进程中执行, 不继承主进程的随机状态。
+    # 之前 set_seed 只写在主进程 run_jobs() 里, spawn 子进程里的训练实际用的是
+    # 系统熵随机的初始化 —— seed 参数从未真正控制随机性, 破坏"同seed配对"的可复现性。
+    # 这里必须在子进程内、每次训练前重新 set_seed, 配对比较才严格有效。
+    set_seed(job['seed'])
     ds = job['dataset']
     pl = job['pred_len']
     variant = job['variant']
@@ -257,12 +262,13 @@ def _train_one(job, device, out_dir):
         def mk(f):
             return ETTDataset(data_path, seq_len=seq_len, pred_len=pl, flag=f)
 
+    pin = device.startswith('cuda')   # GPU 下 pin_memory 加快 host->device 拷贝
     train_set = mk('train')
     val_set = mk('val')
     test_set = mk('test')
-    train_loader = get_dataloader(train_set, batch_size=job['batch_size'])
-    val_loader = get_dataloader(val_set, batch_size=job['batch_size'], shuffle=False)
-    test_loader = get_dataloader(test_set, batch_size=job['batch_size'], shuffle=False)
+    train_loader = get_dataloader(train_set, batch_size=job['batch_size'], pin_memory=pin)
+    val_loader = get_dataloader(val_set, batch_size=job['batch_size'], shuffle=False, pin_memory=pin)
+    test_loader = get_dataloader(test_set, batch_size=job['batch_size'], shuffle=False, pin_memory=pin)
 
     model = create_ablation_model(variant, **job['model_kwargs'])
     params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -271,7 +277,8 @@ def _train_one(job, device, out_dir):
     save_dir = os.path.join(out_dir, 'ckpt', f"{ds}_pl{pl}_{variant}_s{job['seed']}")
     hist = trainer.train(train_loader, val_loader, epochs=job['epochs'],
                          lr=0.001, patience=job['patience'], save_dir=save_dir,
-                         entropy_weight=job.get('entropy_weight', 0.0))
+                         entropy_weight=job.get('entropy_weight', 0.0),
+                         amp=job.get('amp', False))
     res = trainer.test(test_loader)
     # 小数据集保存门控矩阵 (用于分析)
     try:
@@ -291,6 +298,7 @@ def _train_one(job, device, out_dir):
 def _train_syn_ood(job, device, out_dir):
     """合成 OOD 训练: train/val 用 regime='train', test 用 regime='test' (漂移)."""
     torch.set_num_threads(THREADS)
+    set_seed(job['seed'])  # 同 _train_one: spawn 子进程内必须重设种子
     ds = job['dataset']
     pl = job['pred_len']
     variant = job['variant']
@@ -321,9 +329,10 @@ def _train_syn_ood(job, device, out_dir):
     train_set = SyntheticOODDataset(seq_len=seq_len, pred_len=pl, flag='train', **tr)
     val_set = SyntheticOODDataset(seq_len=seq_len, pred_len=pl, flag='val', **tr)
     test_set = SyntheticOODDataset(seq_len=seq_len, pred_len=pl, flag='test', **te)
-    train_loader = get_dataloader(train_set, batch_size=job['batch_size'])
-    val_loader = get_dataloader(val_set, batch_size=job['batch_size'], shuffle=False)
-    test_loader = get_dataloader(test_set, batch_size=job['batch_size'], shuffle=False)
+    pin = device.startswith('cuda')
+    train_loader = get_dataloader(train_set, batch_size=job['batch_size'], pin_memory=pin)
+    val_loader = get_dataloader(val_set, batch_size=job['batch_size'], shuffle=False, pin_memory=pin)
+    test_loader = get_dataloader(test_set, batch_size=job['batch_size'], shuffle=False, pin_memory=pin)
 
     model = create_ablation_model(variant, **job['model_kwargs'])
     params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -331,7 +340,8 @@ def _train_syn_ood(job, device, out_dir):
     save_dir = os.path.join(out_dir, 'ckpt', f"{ds}_pl{pl}_{variant}_s{seed}")
     hist = trainer.train(train_loader, val_loader, epochs=job['epochs'],
                          lr=0.001, patience=job['patience'], save_dir=save_dir,
-                         entropy_weight=job.get('entropy_weight', 0.0))
+                         entropy_weight=job.get('entropy_weight', 0.0),
+                         amp=job.get('amp', False))
     res = trainer.test(test_loader)
     try:
         if hasattr(model, 'get_gate_matrix') and cfg['n_vars'] <= 21 and variant in ('full_v2', 'full_v2_fixed', 'learned_gate', 'gate_prior_only', 'capacity_match', 'no_env'):
@@ -403,6 +413,7 @@ def run_jobs(args):
         if key in done:
             print(f"  [skip] {tag} (已完成)", flush=True)
             continue
+        job['amp'] = bool(getattr(args, 'amp', False))  # 透传到 spawn 子进程内
         set_seed(job['seed'])
         t0 = time.time()
         status, payload = _run_job_with_timeout(job, device, out_dir, timeout)
@@ -714,6 +725,8 @@ def parse_args():
     r.add_argument('--result_csv', required=True)
     r.add_argument('--job_timeout', type=float, default=2400,
                    help='单个 job 超时秒数 (默认 2400=40min); 超时强杀并续跑')
+    r.add_argument('--amp', action='store_true',
+                   help='混合精度训练(仅CUDA生效), 通常提速1.5-2x; HSIC/门控仍走fp32保精度')
 
     s = sub.add_parser('summarize')
     s.add_argument('--output_dir', default='./output_large')

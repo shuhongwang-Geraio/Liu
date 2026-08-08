@@ -136,6 +136,10 @@ class CausalStabilityGate(nn.Module):
         env_size = patch_num // n_envs
         if env_size < 1:
             return torch.ones(bs, nvars, nvars, device=x.device)
+        # 优化(2026-08-08): 显式转 fp32。AMP 训练下 backbone 输出可能是 fp16,
+        # 而 HSIC 数值很小 (hsic_mean 会被 clamp 到 1e-8 量级), fp16 会丢精度;
+        # 这里强制 fp32 保证稳定性分数/门控始终精确, 同时不影响 AMP 对注意力的加速。
+        x = x.float()
         z = self.rff_kernel(x.reshape(-1, d_model)).reshape(bs, nvars, patch_num, self.rff_dim)
         z = z[:, :, :n_envs * env_size, :].reshape(bs, nvars, n_envs, env_size, self.rff_dim)
         # [n_envs, nvars, m, rff]，其中 m = bs*env_size 为每环境的成对样本数
@@ -144,15 +148,15 @@ class CausalStabilityGate(nn.Module):
         m = z.shape[2]
         # 线性核 HSIC (RFF): K[e,c] = Z_{e,c} Z_{e,c}^T ∈ [m,m]
         # HSIC[e,i,j] = <K[e,i], K[e,j]> / m^2 (gram 矩阵内积)。
-        # 用 per-env 矩阵乘实现，避免 einsum 'eip,ejp->eij' 物化 [E,C,C,m*m]
+        # 用 batched 矩阵乘实现，避免 einsum 'eip,ejp->eij' 物化 [E,C,C,m*m]
         # (C=321 时约 12GB) 导致高维 OOM。
         K = torch.einsum('ecma,ecna->ecmn', z, z)              # [E, C, m, m]
         P = m * m
         Kf = K.reshape(n_envs, nvars, P)                       # [E, C, P]
-        hsic = torch.empty(n_envs, nvars, nvars, device=x.device)
-        for e in range(n_envs):
-            Ke = Kf[e]                                         # [C, P]
-            hsic[e] = (Ke @ Ke.T) / P                          # [C, C]
+        # 优化(2026-08-08): 原 for e 循环做 n_envs 次 [C,P]@[P,C] 矩阵乘,
+        # 每次单独 kernel 启动。合并为一次 batched bmm, 峰值显存与循环相同
+        # (都是 C×P×C 的中间张量), 但减少调度开销, 高维(如 traffic 862 通道)更快。
+        hsic = torch.bmm(Kf, Kf.transpose(1, 2)) / P           # [E, C, C]
         hsic_mean = hsic.mean(dim=0)                        # [C,C] 依赖强度
         hsic_std = hsic.std(dim=0)
         if self.running_stats:
@@ -319,11 +323,14 @@ class CausalChannelAttentionTemporal(nn.Module):
         K = self.W_K(xt).view(B, nvars, self.n_heads, self.d_k).transpose(1, 2)
         V = self.W_V(xt).view(B, nvars, self.n_heads, self.d_k).transpose(1, 2)
         attn = (Q @ K.transpose(-2, -1)) * self.scale  # [B, heads, nvars, nvars]
-        # 门控在每个 patch 位置共享
-        gate_exp = gate_matrix.unsqueeze(1).expand(bs, patch_num, nvars, nvars)
-        gate_exp = gate_exp.reshape(B, nvars, nvars)
+        # 门控在每个 patch 位置共享。
+        # 优化(2026-08-08): 保持 5D 广播, 避免把 expanded 视图 reshape 成
+        # [B, nv, nv] (对 [bs*patch_num, nv, nv] 的一次显式拷贝, 高维下 ~284MB/前向),
+        # 直接与 [bs, patch_num, heads, nv, nv] 的 attn 广播相加, 结果一致且更快。
+        log_gate = torch.log(gate_matrix.unsqueeze(1).unsqueeze(1).clamp(min=1e-4))  # [bs,1,1,nv,nv]
+        attn5 = attn.view(bs, patch_num, self.n_heads, nvars, nvars) + log_gate
         # 软门控：log域加性偏置（与 CausalChannelAttention 一致）
-        attn = attn + torch.log(gate_exp.unsqueeze(1).clamp(min=1e-4))
+        attn = attn5.reshape(B, self.n_heads, nvars, nvars)
         attn = F.softmax(attn, dim=-1)
         attn = self.dropout(attn)
         out = (attn @ V).transpose(1, 2).contiguous().view(B, nvars, d_model)

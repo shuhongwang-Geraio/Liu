@@ -53,3 +53,36 @@ python run_minimal_falsifiable.py --dataset traffic \
 
 ---
 两项都是脚本本身没问题、只是**规模/算力不够**，等有GPU环境随时可以直接跑上面的命令。
+
+> ✅ **状态更新 (2026-08-08)**：以上两项均已完成 —— `output_large_v2/`（6数据集×6变体×8seed，720结果）与 `output_falsifiable_full/`（traffic 全规模门控诊断，80条）均已跑完并汇总进 `method_assessment.md`。
+
+---
+
+# 下一轮待办 (2026-08-08, 基于最新实验结果 method_assessment.md)
+
+## 0. 当前定位（一句话）
+CausalCIT 是**场景依赖的有效改进**，不是通用 SOTA：高维多通道（traffic +7.9%、electricity +3.9%，Holm p<0.05）显著，低维/长 horizon（ETTh1、ILI）不占优——符合方法假设（通道间因果依赖稀疏时门控退化为噪声）。论文正式采用 `full_v2_fixed`。
+
+## P0 科学严谨性（审稿硬伤，最优先）
+- [ ] **P0-1 重跑主表**：修复 run_large.py 的 spawn seed bug 后（见下），用 `full_v2_fixed` 重跑 6 数据集 × 8 seed 主表，确认 traffic/electricity 的显著提升在"seed 真正生效"协议下依然成立。这是论文主表可信度的基石。
+- [ ] **P0-2 统一 collapsed 判据**：`analyze_gates.py`（std<0.01）与 `run_minimal_falsifiable.py`（std<1e-4）不一致，统一为同一常量。
+
+## P1 论文内容补强
+- [ ] **补 baseline**：目前只有 PatchTST。至少加 **iTransformer**（通道注意力相关）+ **DLinear**（强 CI 基线），可选 Crossformer。
+- [ ] **敏感性分析**：n_envs(2/4/8)、rff_dim、prior_weight、temperature 各一组，证明结论不依赖超参脆点。
+- [ ] **熵正则化实验**：`entropy_weight>0` 代码已接线（trainer + run_large --entropy_weight）但从未测过；gate_prior_only 坍缩/no_env 部分坍缩正是熵正则可对症的，值得在 traffic 上跑一组。
+- [ ] **可视化升级**：traffic/electricity 高维门控矩阵聚类热图；full_v2_fixed 因果/虚假/独立边箱线图；提升率 bootstrap CI 误差棒图。
+
+## P2 故事定位与诚实边界
+- [ ] **OOD 结论谨慎处理**：现有 `output_ood_real` 中 learned_gate（纯容量）在 electricity_ood/traffic_ood 部分设置更强（traffic_ood pl96 +6.73% > full_v2 +5.20%）；`syn_ood` 上 full_v2 为 -1.21% 显著变差。**尚不能宣称"因果门控带来 OOD 鲁棒性"**——先排查 syn_ood 机制测试为何失败（spurious_strengths 配置 or 模型容量），否则此章会被审稿人反杀。
+- [ ] **写作**：按"场景依赖有效改进 + 修复版批不变性 + 门控结构诊断"三条主线扩展 `method_assessment.md` 为论文核心章节，limitation 明确低维/长 horizon 边界。
+
+## 本轮已完成（2026-08-08）
+- [x] **代码审查**：全量语法编译 + lint 通过；`full_v2_fixed` 的 running_stats 修复、门控诊断插桩、seed 配对 Wilcoxon+Holm、高维 OOM 防护均确认正确。
+- [x] **修复 run_large.py spawn seed bug**：`set_seed` 原只在主进程，spawn 子进程不继承 → seed 从未真正控制随机初始化。已在 `_train_one`/`_train_syn_ood` 内补 `set_seed(job['seed'])`。
+- [x] **性能优化**（默认开关全关，不改变旧结果可复现性）：
+  - `trainer.py`：`amp` 混合精度训练（仅 CUDA 生效，GradScaler + autocast，HSIC/门控仍在 causal_channel 内 fp32 保精度），预计提速 1.5-2x。
+  - `causal_channel.py`：HSIC 的 for 循环合并为一次 `bmm`（峰值显存不变）；`compute_stability_score_v2` 显式 fp32 防 AMP 下 HSIC 精度损失；注意力门控改 5D 广播，省去 `[bs*patch_num,nv,nv]` 显式拷贝。
+  - `data.py` + 两个 run 脚本：`get_dataloader` 支持 `pin_memory`，GPU 下自动开启。
+  - 用法：`run_large.py run --amp ...` / `run_minimal_falsifiable.py --amp`。
+- [ ] **注意**：`run_minimal_falsifiable.py` 仍是单进程串行（96 次训练不并行）——想提速可手动按 seed 分片开多进程（`--seeds 42 123 2024 7` 等跑在不同 GPU 上），或后续给脚本加 shard 逻辑。

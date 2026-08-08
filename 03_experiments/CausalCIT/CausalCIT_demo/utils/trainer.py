@@ -45,13 +45,19 @@ class Trainer:
         self.device = device
 
     def train(self, train_loader, val_loader, epochs=20, lr=0.001,
-              patience=5, save_dir='./checkpoints', entropy_weight=0.0):
+              patience=5, save_dir='./checkpoints', entropy_weight=0.0, amp=False):
         """
         entropy_weight: P1优化 — 门控熵正则化系数 (默认0，不影响旧行为)。
             若>0且模型实现了get_gate_entropy()，会在loss中加入
             `entropy_weight * gate_entropy`，鼓励门控sigmoid输出远离0.5，
             做出更果断的通道交互/隔离判断，避免门控长期停留在模糊区间。
+        amp: 混合精度训练 (仅 CUDA 生效, 默认关以保持旧结果可复现)。
+            热点(通道注意力/backbone)走 fp16, 通常提速 ~1.5-2x;
+            HSIC/门控部分已在 causal_channel.py 内部保持 fp32 计算(数值稳定)。
         """
+        self._amp = bool(amp) and self.device.startswith('cuda')
+        use_amp = self._amp
+        scaler = torch.cuda.amp.GradScaler(enabled=use_amp) if use_amp else None
         os.makedirs(save_dir, exist_ok=True)
         criterion = nn.MSELoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
@@ -72,15 +78,29 @@ class Trainer:
                 batch_x = batch_x.to(self.device)
                 batch_y = batch_y.to(self.device)
                 optimizer.zero_grad()
-                pred = self.model(batch_x)
-                loss = criterion(pred, batch_y)
-                if supports_entropy:
-                    gate_entropy = self.model.get_gate_entropy()
-                    if gate_entropy is not None:
-                        loss = loss + entropy_weight * gate_entropy
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
-                optimizer.step()
+                if use_amp:
+                    with torch.cuda.amp.autocast():
+                        pred = self.model(batch_x)
+                        loss = criterion(pred, batch_y)
+                        if supports_entropy:
+                            gate_entropy = self.model.get_gate_entropy()
+                            if gate_entropy is not None:
+                                loss = loss + entropy_weight * gate_entropy
+                    scaler.scale(loss).backward()
+                    scaler.unscale_(optimizer)  # 供 clip_grad_norm_ 使用真实梯度范数
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    pred = self.model(batch_x)
+                    loss = criterion(pred, batch_y)
+                    if supports_entropy:
+                        gate_entropy = self.model.get_gate_entropy()
+                        if gate_entropy is not None:
+                            loss = loss + entropy_weight * gate_entropy
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+                    optimizer.step()
                 scheduler.step()
                 epoch_loss.append(loss.item())
 
@@ -115,23 +135,34 @@ class Trainer:
     def validate(self, val_loader, criterion):
         self.model.eval()
         losses = []
+        use_amp = getattr(self, '_amp', False)
         with torch.no_grad():
             for batch_x, batch_y in val_loader:
                 batch_x = batch_x.to(self.device)
                 batch_y = batch_y.to(self.device)
-                pred = self.model(batch_x)
-                loss = criterion(pred, batch_y)
+                if use_amp:
+                    with torch.cuda.amp.autocast():
+                        pred = self.model(batch_x)
+                        loss = criterion(pred, batch_y)
+                else:
+                    pred = self.model(batch_x)
+                    loss = criterion(pred, batch_y)
                 losses.append(loss.item())
         return np.mean(losses)
 
     def test(self, test_loader):
         self.model.eval()
         preds, trues = [], []
+        use_amp = getattr(self, '_amp', False)
         with torch.no_grad():
             for batch_x, batch_y in test_loader:
                 batch_x = batch_x.to(self.device)
                 batch_y = batch_y.to(self.device)
-                pred = self.model(batch_x)
+                if use_amp:
+                    with torch.cuda.amp.autocast():
+                        pred = self.model(batch_x)
+                else:
+                    pred = self.model(batch_x)
                 preds.append(pred.cpu().numpy())
                 trues.append(batch_y.cpu().numpy())
         preds = np.concatenate(preds, axis=0)

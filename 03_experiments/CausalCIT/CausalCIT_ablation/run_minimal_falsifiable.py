@@ -72,7 +72,7 @@ DEFAULT_SEEDS = [42, 123, 2024, 7, 13, 99, 2023, 31]
 # 建模/数据/训练代码路径，但额外返回训练好的 model + test_set 供门控诊断使用。
 # ============================================================
 def train_one(ds, pl, variant, seed, dataset_dir, device, epochs=None,
-              entropy_weight=0.0):
+              entropy_weight=0.0, amp=False):
     set_seed(seed)
     cfg = dataset_config(ds)
     job = build_kwargs(ds, pl, variant, seed, dataset_dir, entropy_weight=entropy_weight)
@@ -103,9 +103,10 @@ def train_one(ds, pl, variant, seed, dataset_dir, device, epochs=None,
         val_set = ETTDataset(data_path, seq_len=seq_len, pred_len=pl, flag='val')
         test_set = ETTDataset(data_path, seq_len=seq_len, pred_len=pl, flag='test')
 
-    train_loader = get_dataloader(train_set, batch_size=job['batch_size'])
-    val_loader = get_dataloader(val_set, batch_size=job['batch_size'], shuffle=False)
-    test_loader = get_dataloader(test_set, batch_size=job['batch_size'], shuffle=False)
+    pin = device.startswith('cuda')
+    train_loader = get_dataloader(train_set, batch_size=job['batch_size'], pin_memory=pin)
+    val_loader = get_dataloader(val_set, batch_size=job['batch_size'], shuffle=False, pin_memory=pin)
+    test_loader = get_dataloader(test_set, batch_size=job['batch_size'], shuffle=False, pin_memory=pin)
 
     model = create_ablation_model(variant, **job['model_kwargs'])
     params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -113,7 +114,7 @@ def train_one(ds, pl, variant, seed, dataset_dir, device, epochs=None,
     save_dir = os.path.join('.', '_falsifiable_ckpt', f"{ds}_pl{pl}_{variant}_s{seed}")
     hist = trainer.train(train_loader, val_loader, epochs=ep, lr=0.001,
                          patience=job['patience'], save_dir=save_dir,
-                         entropy_weight=entropy_weight)
+                         entropy_weight=entropy_weight, amp=amp)
     res = trainer.test(test_loader)
     return dict(mse=float(res['mse']), mae=float(res['mae']), rmse=float(res['rmse']),
                params=params, epochs=hist['epochs_trained'],
@@ -232,7 +233,8 @@ def run(args):
                 try:
                     out = train_one(args.dataset, pl, variant, seed, dataset_dir,
                                     args.device, epochs=args.epochs,
-                                    entropy_weight=args.entropy_weight)
+                                    entropy_weight=args.entropy_weight,
+                                    amp=args.amp)
                 except Exception as e:
                     print(f"  [err] {e!r}")
                     rows.append(dict(dataset=args.dataset, pred_len=pl, variant=variant,
@@ -399,6 +401,8 @@ def parse_args():
                    help='默认用该数据集的标准 epochs; 传入以覆盖(如 --quick sanity check)')
     p.add_argument('--entropy_weight', type=float, default=0.0,
                    help='门控熵正则化系数(回应§2.3), 默认0=不启用')
+    p.add_argument('--amp', action='store_true',
+                   help='混合精度训练(仅CUDA生效), 通常提速1.5-2x; HSIC/门控仍走fp32保精度')
     p.add_argument('--device', default='cuda:0' if torch.cuda.is_available() else 'cpu')
     p.add_argument('--output_dir', default='./output_falsifiable')
     p.add_argument('--skip_batch_invariance', action='store_true',
