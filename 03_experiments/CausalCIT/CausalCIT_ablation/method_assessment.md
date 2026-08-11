@@ -104,6 +104,24 @@
 
 ---
 
+## 3.5 PCD 静态掩码对比实验 (2026-08-11 补充)
+
+回应评审刀型问题: "HSIC 稳定性门控比静态相关掩码 (PCD, ICASSP'26) 好在哪里?"
+在 syn_ood (7 通道低维 OOD, 虚假相关反转) 上 5 seeds 对比:
+
+| 变体 | MSE | vs CI | vs full_v2 |
+|------|-----|-------|------------|
+| patchtst (CI) | **0.3186±0.0007** | — | — |
+| full_v2 | 0.3220±0.0005 | -1.09% (ns) | — |
+| pcd_gate (静态掩码) | 0.3220±0.0011 | -1.08% (ns) | +0.01% (p=1.0) |
+
+**诚实结论**: 低维 OOD 下两种交互变体一致差于 CI 且完全持平 → 无法在该场景区分两者
+(都在依赖稀疏的失效区)。**claim 不采用"稳定性门控优于静态掩码"的强表述**, 改为:
+"通道交互价值取决于数据依赖结构 (PCD 论文的维度效应 + 我们的主表共同支持),
+稳定性门控与静态掩码在高维经验增益相当, 附加 batch 不变性与可解释性优势。"
+真正能区分两者的实验是**高维受控 OOD** (traffic OOD 划分或 50~100 通道合成), 见
+`pcd_compare_argument.md` §6。
+
 ## 4. 实验产物清单
 
 | 文件 | 内容 |
@@ -113,6 +131,8 @@
 | `output_falsifiable_full/gate_diagnostics.json` | 门控 batch 不变性诊断 (80 条) |
 | `output_falsifiable_full/minimal_falsifiable_report.md` | 门控诊断汇总报告 |
 | `output_falsifiable/large_scale_report.md` | traffic 6 变体对照 (96 结果) |
+| `output_pcd_full/results.csv` + `pcd_vs_causalcit_report.md` | PCD 静态掩码 vs HSIC 门控对比 (15 结果) |
+| `pcd_compare_argument.md` | PCD 对比论证文本 (claim 定位) |
 
 ## 5. 已知边界与后续建议
 

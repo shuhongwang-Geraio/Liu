@@ -1,0 +1,24 @@
+[
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "full_v2",
+    "seed": 42,
+    "off_mean": 0.9538093209266663,
+    "off_std": 0.16732151806354523,
+    "off_min": 0.056830357760190964,
+    "off_max": 0.9999755620956421,
+    "collapsed": false
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "gate_prior_only",
+    "seed": 42,
+    "off_mean": 0.1756013035774231,
+    "off_std": 0.0032692733220756054,
+    "off_min": 0.17008821666240692,
+    "off_max": 0.18403297662734985,
+    "collapsed": false
+  }
+]

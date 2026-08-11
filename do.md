@@ -1,88 +1,238 @@
-我把两处「必须要 GPU」的活拆开说清楚，包括**现在到底跑到哪一步了**（这点之前我漏了一个关键细节，刚才核对文件发现，需要纠正一下）。
+# CausalCIT 待办清单 (2026-08-11 更新)
 
-## 1. 多数据集大规模跑——不是"新增"，是要用新协议**重跑**
+> 本文档是**详细待办执行清单**（决策门、GPU 命令、止损规则）；
+> 进度概览与"单一事实来源"见 `PROGRESS.md`（按 research-org 规范，会话结束必更新）。
 
-现在 `output_large/large_scale_report.md` 里 electricity/etth1/ettm1/weather 的结果，是 **07-22 的老协议**：
+> 上版 (2026-08-08) 之后的状态变化:
+> - `output_large_v2/` (6 数据集×6 变体×8 seed = 720 结果) 与 `output_falsifiable_full/`
+>   (traffic 门控诊断 80 条) 均已跑完, 汇总进 `method_assessment.md`。
+> - 2026-08-08 修复了 `run_large.py` 的 spawn seed bug (见 P0-1)。
+> - 2026-08-10 完成了多项 P1 准备工作 (见文末"本轮已完成")。
+> - 2026-08-11 归档战略分析 (07_scope_and_publication_risk_analysis.md) 与
+>   新方向脑暴 (00_inbox/2026-08-11_new_directions.md); 新增本节「方向决策门」。
 
-```4:5:03_experiments/CausalCIT/CausalCIT_ablation/output_large/large_scale_report.md
-> 数据集: ['electricity', 'etth1', 'ettm1', 'weather']
-> 变体: ['full_v2', 'no_gate', 'patchtst']
-```
+## 0. 当前定位 (一句话, 2026-08-11 修订)
 
-问题：
-- 只有 3 seed、3 个变体（没有 `capacity_match`/`gate_prior_only`/`full_v2_fixed`/`no_env` 这些评审 re2 要求的关键对照）
-- 用的是已弃用的 t-test，没有 Holm 校正
-- 效果本身也弱：etth1 三个 horizon 有两个是负的，weather 三个全负，只有 electricity/ettm1 的 pl96 有 +4~5%——这批结果早于 `entropy_weight` 死代码修复、`running_stats` batch依赖修复，**不能再拿来用**。
+**CausalCIT 的机制可能从未被公平检验** —— `05_major_improvement.md` 诊断的三个根因
+(RFF σ 硬编码 / 未归一化 HSIC / 非语义环境) 至今未修, 导致:
+- "高维有效"很可能是 **d_model 混淆变量** (traffic d16 +7.9% > electricity d32 +3.3% >
+  weather d64 −0.6%, 对 d_model 完全单调);
+- 门控退化 ≈ 相关性强度 → `full_v2 ≈ pcd_gate` 打平是**根因的预言**而非"机制无效"。
+因此当前所有"负收益/窄范围"结论**在跑完第 0 步静态诊断前都不构成最终判断**。
+论文正式采用 `full_v2_fixed`; ⚠️ 数字仍基于 seed bug 修复前协议, P0-1 重跑前不可最终采信。
 
-而 `output_falsifiable/large_scale_report.md` 是**新协议**（8 seed、5 变体全带、Wilcoxon+Holm）已经在 **traffic** 上跑完了，效果很好（pl96 +8.4%、pl192 +7.4%，Holm p<0.05，vs关键对照也显著）。
+## 0.5 方向决策门 (最高优先, 2026-08-11)
 
-**要做的事**：用 `run_large.py` 新协议，对 electricity / etth1 / ettm1 / weather 重跑（8 seed），外加从未跑过的 exchange / ili。命令（有GPU后）：
+**门 1 — 第 0 步静态诊断 (0 GPU, 立即, ~30min)**
+- 内容: 随机初始化 + 单 batch 前向, 打印 `proj.std`、`hsic_mean` 动态范围、
+  `log(hsic_mean)` vs `log(1/(1+cv))` 的方差贡献占比; weather(d64)/electricity(d32)/traffic(d16) 各一次。
+- 脚本: 按 `05_major_improvement.md` 第 0 步写 (或复用 `CausalCIT_demo` 单 batch 前向)。
+
+**门 2 — 根因 1&2 定性成立?** → ✅ **2026-08-11 门 1 诊断已确认** (见
+`CausalCIT_ablation/docs/diagnostics/2026-08-11_gate_static_diagnosis.md`)
+- proj.std = {3.99, 5.92, 7.49} 随 d_model 单调 (≈√d_model) → **根因 1 成立**;
+- hsic_mean 动态范围仅 1.1–1.2× → 核坏导致依赖强度无区分度 (比预想更严重);
+- log(hsic) 方差占比 69–88% → **根因 2 成立** (cv 项是装饰品);
+- cv≈0.04 → **根因 3 成立** (环境切分无信息, 至少 syn_ood 上)。
+→ ✅ **修 A+B 已实现并 CPU 验证** (2026-08-11): `causal_channel.py` 新增
+  `rff_sigma_mode='median'` + `cka_normalize=True` (均默认关闭, 不破坏旧行为)。
+  验证: proj.std 3.5–7.9 → 0.8–1.1; HSIC 区分度 1.1× → **5.6–9×**;
+  cv≈0.005 (根因 3 仍在)。
+→ ✅ **GPU 待办已就绪** (2026-08-11): 参数已透传全部链路
+  (`run_large.FULL_V2_KWARGS` → `create_ablation_model` → `CausalCIT` →
+  `CausalCIT_backbone` → `CausalChannelInteraction` → `CausalStabilityGate`),
+  修复版 1-epoch 训练 smoke 通过 (median 初始化 + 反向传播 OK)。
+→ **GPU 唯一待办**: 8-seed 重跑 weather/electricity (验证靶场), 看负收益是否翻正。
+  注意: 修复版是新协议, 与 `output_large_v2` 旧数字**不可直接对比**;
+  traffic(d16) 核"最不坏"→ 修复后提升可能收窄, 属预期。
+
+**门 3 — 想法 1 (跨环境风险厌恶 DRO 式, ★★★★★)** — 换目标函数不换架构
+- 快速验证: weather/electricity 上 λ∈{0,0.1,1} 消融; 无单调趋势即止损。
+- 或并行开新线: 想法 2 (可逆解耦, 调研支持最强) / 想法 3 (失效模式审计)。
+
+**止损规则**: 门 2 "仍负"最多再做一轮修复(C)即止损; 想法 1 无单调趋势直接放弃;
+不无限追加变体。
+
+---
+
+## 一、GPU 空闲时优先跑 (按顺序)
+
+### P0-1 ★重跑主表 (科学严谨性硬伤, 最高优先)
+- 背景: spawn seed bug 已修复 (`_train_one`/`_train_syn_ood` 内补 `set_seed(job['seed'])`),
+  但主表还是旧协议 (seed 从未真正控制随机初始化) 的结果。
+- 动作: 用修复后的代码 + `full_v2_fixed` 重跑 6 数据集 × 8 seed:
 ```bash
-python run_large.py gen --datasets weather etth1 ettm1 electricity exchange ili \
-    --variants patchtst full_v2 full_v2_fixed capacity_match gate_prior_only no_env \
-    --seeds 42 123 2024 7 13 99 2023 31 --num_shards 3 --output_dir ./output_large_v2
-# 3张卡各跑一个 shard
-CUDA_VISIBLE_DEVICES=0 python run_large.py run --device cuda:0 --job_file ./output_large_v2/jobs_shard0.json --result_csv ./output_large_v2/results_shard0.csv
+python run_large.py gen --datasets traffic electricity etth1 ettm1 weather exchange ili \
+    --variants patchtst full_v2_fixed capacity_match gate_prior_only no_env \
+    --seeds 42 123 2024 7 13 99 2023 31 --num_shards 3 --output_dir ./output_large_v3
+# 每张卡一个 shard
+CUDA_VISIBLE_DEVICES=0 python run_large.py run --device cuda:0 --job_file ./output_large_v3/jobs_shard0.json --result_csv ./output_large_v3/results_shard0.csv
 ...
-python run_large.py summarize --output_dir ./output_large_v2
+python run_large.py summarize --output_dir ./output_large_v3
 ```
-规模大致：6数据集×~2.5horizon×6变体×8seed ≈ 700+ 次训练，electricity(30ep,321变量)/traffic(30ep,862变量)最贵，weather/ETT较快，3卡并行估计数小时到一天量级。
+- 验收: traffic/electricity 的显著提升在 seed 真正生效下依然成立; 把
+  `plot_bootstrap_ci.py --results_dir ./output_large_v3` 重新出图 (新图替代旧图投稿)。
 
-## 2. 门控batch不变性检验——目前只有"意思到了"的CPU smoke test，没有真规模统计版本
-
-`run_minimal_falsifiable.py` 现在跑出的 `output_falsifiable_smoketest/` 是 `--quick` 模式：
-
-```213:217:03_experiments/CausalCIT/CausalCIT_ablation/run_minimal_falsifiable.py
-    if args.quick:
-        pls = pls[:1]
-        args.seeds = args.seeds[:2]
-        args.epochs = 2
-```
-
-即**只有1个pred_len、2个seed、2个epoch、用内置合成数据**——模型基本没训练到收敛，`batch_dep_score` 那组数字（0.015→0.000）只能证明"代码逻辑对了"，不能当正式结论用（`#seed`太少也做不了显著性检验）。
-
-而且我之前核对 `output_falsifiable/gate_diagnostics.json` 发现它是空的 `[]`——因为那批数据是用 `run_large.py` 跑的（有 shard 文件为证），`run_large.py` 根本没有 `batch_invariance_check` 这个逻辑（那是 `run_minimal_falsifiable.py` 专属）。所以**目前完全没有 GPU 规模、真实数据、足量 seed 的 batch 不变性检验结果**。
-
-**要做的事**：在真实数据集（推荐 traffic，评审指定的最小可证伪数据集）上用完整 epoch(30) + 8 seed 跑 `run_minimal_falsifiable.py`：
+### P1-3 熵正则正式实验 (traffic)
+- smoke test 已确认 `--entropy_weight>0` 对 full_v2 门控生效 (off_mean 0.19→0.95)。
+- 动作: traffic 30 epoch × 8 seed, 对比 entropy_weight ∈ {0, 0.01, 0.1}:
 ```bash
-python run_minimal_falsifiable.py --dataset traffic \
-    --seeds 42 123 2024 7 13 99 2023 31 --device cuda:0 \
-    --output_dir ./output_falsifiable_full
+python run_minimal_falsifiable.py --dataset traffic --seeds 42 123 2024 7 13 99 2023 31 \
+    --device cuda:0 --entropy_weight 0.01 --output_dir ./output_falsifiable_entropy
 ```
-这一步比第1项更贵，因为 `batch_invariance_check` 每个 (variant, seed, pred_len) 会额外做 `n_targets(5)×n_trials(3)=15` 次前向传播，且是单进程顺序跑完 6变体×8seed×2horizon=96 次训练（没有像 `run_large.py` 那样分shard并行）。可以考虑手动开多进程分批 `--seeds` 跑在不同GPU上，或者先加 `--skip_batch_invariance` 只拿MSE，再单独对 full_v2/full_v2_fixed 补一轮门控诊断。
+- 注意: `gate_prior_only` 无门控熵接口, 熵正则**不会**作用于它 (见 smoke 记录)——
+  若想覆盖, 需先给 `PriorOnly_ChannelInteraction` 补 `last_entropy` 接口 (非 GPU 工作)。
+
+### P1-1 敏感性分析网格 (run_large.py 已支持透传参数)
+- 背景: `n_envs`/`rff_dim`/`prior_weight`/`temperature` 原为硬编码, 现已加
+  `--n_envs --rff_dim --prior_weight --temperature` (默认 None=不变, 不影响旧结果复现)。
+- 动作 (建议 traffic, 每组 8 seed, full_v2_fixed):
+```bash
+python run_large.py gen --datasets traffic --variants full_v2_fixed \
+    --seeds 42 123 2024 7 13 99 2023 31 --n_envs 2 --num_shards 3 --output_dir ./output_sens_nenvs2
+python run_large.py gen --datasets traffic --variants full_v2_fixed \
+    --seeds ... --rff_dim 64 --num_shards 3 --output_dir ./output_sens_rff64
+python run_large.py gen --datasets traffic --variants full_v2_fixed \
+    --seeds ... --prior_weight 0.1 --num_shards 3 --output_dir ./output_sens_prior01
+python run_large.py gen --datasets traffic --variants full_v2_fixed \
+    --seeds ... --temperature 1.0 --num_shards 3 --output_dir ./output_sens_temp10
+```
+- 验收: 提升率方向/幅度不因超参显著翻转 → "结论不依赖超参脆点"。
+
+### P1-2 baseline 评测 (iTransformer / DLinear)
+- 官方代码已 clone: `01_external/iTransformer/code/`, `01_external/DLinear/code/`
+  (iTransformer = thuml/iTransformer; DLinear = cure-lab/LTSF-Linear)。
+- 前置 (非 GPU): 把它们适配进 `models_ablation.py` 的 `create_ablation_model`
+  变体注册表 (DLinear 极简; iTransformer 需按我们 data/trainer 接口包一层),
+  用 `--quick` 在 CPU 上 smoke 通。
+- GPU 动作: 与 P0-1 同协议跑 6 数据集 × 8 seed, 结果进主表与消融对照。
 
 ---
-两项都是脚本本身没问题、只是**规模/算力不够**，等有GPU环境随时可以直接跑上面的命令。
 
-> ✅ **状态更新 (2026-08-08)**：以上两项均已完成 —— `output_large_v2/`（6数据集×6变体×8seed，720结果）与 `output_falsifiable_full/`（traffic 全规模门控诊断，80条）均已跑完并汇总进 `method_assessment.md`。
+## 二、不需要 GPU 的剩余工作
+
+### P0-2 统一 collapsed 判据 (审稿硬伤) — ✅ 2026-08-10 完成
+- 两处已统一为常量 `COLLAPSED_STD_THRESHOLD = 0.01`
+  (`run_minimal_falsifiable.py` 顶部 + `analyze_gates.py` 顶部, 互有注释指认)。
+- smoke 验证: gate_prior_only syn_ood off_std=0.0033 → 按 0.01 判"坍缩" (两脚本口径一致)。
+- 待办: 旧的涉 collapsed 报告 (如 `output_falsifiable_full/`) 若投稿引用, 需用新判据重生成。
+
+### baseline 论文阅读 + 差异论证 (审稿人 re2 第 3 条点名) — ✅ 调研已完成
+- 调研 agent 产出已归档: `02_research_notes/surveys/04_baseline_literature/`
+  (`plan.md` / `stage1_research_preparation.md` / `report_final.md` /
+  `appendix_baseline_survey_condensed.md`)。
+- 论文/代码已下载至 `01_external/` (新增 Crossformer、TimeXer、FOIL、Koopa 的
+  `paper/`+`code/`, Adapformer、CSformer 的 `paper/`)。
+- 下一步: 基于 report_final 写"vs CausalCIT 差异论证"正式段落 (写作任务)。
+
+### baseline 代码接入 — ✅ 2026-08-10 完成 (待 GPU 评测)
+- `models_ablation.py` 新增 `DLinear` / `iTransformerModel` 自包含实现,
+  `create_ablation_model` 支持 `--variants dlinear itransformer`;
+  统一接口 [bs, seq_len, nvars] → [bs, pred_len, nvars]。CPU 前向验证全部通过。
+- 待办: GPU 上按 P0-1 同协议跑 6 数据集 × 8 seed (P1-2)。
+
+### 熵正则接口扩展 — ✅ 2026-08-10 完成
+- `AblationBackbone`/`AblationModel` 补 `get_gate_entropy()`, 转发到通道交互模块的
+  `get_last_entropy()` (无接口的变体安全返回 None)。
+- 验证: gate_prior_only 在 entropy=0.01 下门控 off_mean 0.18→0.99 (被熵正则推向果断),
+  修复前完全不受影响。已更新 smoke 记录 `output_entropy_smoke_2/`。
+
+### 高维门控矩阵 dump + 聚类热图
+- 脚本已写好: `plot_gate_heatmaps.py` (含高维子采样) + 说明 `plot_visualization_README.md`。
+- 缺数据: traffic/electricity 的 `full_v2_fixed` 门控矩阵未 dump
+  (run_large 只在 n_vars≤21 保存)。需写 eval dump 脚本 (加载 checkpoint 取 `get_gate_matrix()`)
+  或放宽 dump 条件重跑。低维样例图已用旧数据验证可用。
+
+### 战略补救：训练前适用性判据 (方案 1, 0 GPU) — 见 `02_research_notes/ideas/01_adaptive_channel/07_scope_and_publication_risk_analysis.md`
+- 只从原始数据计算统计量: 通道依赖密度 / 依赖强度跨环境离散度 / 稳定通道对占比,
+  与 7 数据集×horizon 实测增益做对应 → 能否训练前预测增益正负号。
+- 目的: 把"范围窄"从 B 类(无解释)变成 A 类(有原则、可预测); 是审稿人"方法太窄"的正面回答。
+
+### 战略补救：syn_ood 识别-利用脱节排查 (方案 3b, 可并入 P1-1) — 同上文档 §3
+- 线索: syn_ood 上门控**结构识别成功**(因果边高 20-100 倍) 但 **MSE -1.21% 更差** → "识别对、没利用上"。
+- 动作: 扫 `alpha_init`(-2.0 初始几乎关闭混合分支) / `fusion_alpha`(0.3 稀释),
+  看 syn_ood 负收益能否翻正。若成立, 问题从"机制不成立"变"利用不足", 可修。
 
 ---
 
-# 下一轮待办 (2026-08-08, 基于最新实验结果 method_assessment.md)
+## 三、P2 剩余事项 (故事定位与诚实边界)
 
-## 0. 当前定位（一句话）
-CausalCIT 是**场景依赖的有效改进**，不是通用 SOTA：高维多通道（traffic +7.9%、electricity +3.9%，Holm p<0.05）显著，低维/长 horizon（ETTh1、ILI）不占优——符合方法假设（通道间因果依赖稀疏时门控退化为噪声）。论文正式采用 `full_v2_fixed`。
+- [ ] **OOD 结论谨慎处理**: `syn_ood` 上 full_v2 为 -1.21% 显著变差, 尚不能宣称
+  "因果门控带来 OOD 鲁棒性"。先排查 syn_ood 机制测试为何失败 (spurious_strengths 配置 or 容量),
+  否则此章会被审稿人反杀。
+  - **进展 (2026-08-11)**: PCD 对比实验初步发现 — 已有 50-epoch ckpt 评估显示
+    `full_v2 ≈ pcd_gate` (差异<0.001) 且均略差于 patchtst (~0.5-0.8%),
+    与 `output_pcd_smoke` (3-epoch) 一致 → PCD 注入的虚假结构未让门控产生收益,
+    机制测试确认未通过。见 `docs/pcd/pcd_preliminary_findings.md`。
+    待 GPU 机器完成 `output_pcd_full/` 5-seed 正式版 + 逐情形(A/B/C)检验后再定稿。
+- [ ] **最小可证伪测试收尾 / claim 降级决策**: 若 P0-1 + P1-1 后因果增益仍只在
+  traffic/pl192 等窄条件下成立 → 正式把定位从 "causal channel interaction" 降级为
+  "stability-regularized channel attention", 去掉 "causal" 字眼 (自评 §6 P0 一直没执行)。
+- [ ] **写作**: 按 "场景依赖有效改进 + 修复版批不变性 + 门控结构诊断" 三条主线,
+  把 `method_assessment.md` 扩展为论文核心章节; limitation 明确低维/长 horizon 边界。
+- [ ] **可视化补强**: traffic/electricity 高维门控矩阵聚类热图 (等数据 dump);
+  full_v2_fixed 因果/虚假/独立边箱线图 (需合成数据真值边对齐)。
 
-## P0 科学严谨性（审稿硬伤，最优先）
-- [ ] **P0-1 重跑主表**：修复 run_large.py 的 spawn seed bug 后（见下），用 `full_v2_fixed` 重跑 6 数据集 × 8 seed 主表，确认 traffic/electricity 的显著提升在"seed 真正生效"协议下依然成立。这是论文主表可信度的基石。
-- [ ] **P0-2 统一 collapsed 判据**：`analyze_gates.py`（std<0.01）与 `run_minimal_falsifiable.py`（std<1e-4）不一致，统一为同一常量。
+---
 
-## P1 论文内容补强
-- [ ] **补 baseline**：目前只有 PatchTST。至少加 **iTransformer**（通道注意力相关）+ **DLinear**（强 CI 基线），可选 Crossformer。
-- [ ] **敏感性分析**：n_envs(2/4/8)、rff_dim、prior_weight、temperature 各一组，证明结论不依赖超参脆点。
-- [ ] **熵正则化实验**：`entropy_weight>0` 代码已接线（trainer + run_large --entropy_weight）但从未测过；gate_prior_only 坍缩/no_env 部分坍缩正是熵正则可对症的，值得在 traffic 上跑一组。
-- [ ] **可视化升级**：traffic/electricity 高维门控矩阵聚类热图；full_v2_fixed 因果/虚假/独立边箱线图；提升率 bootstrap CI 误差棒图。
+## 四、本轮已完成 (2026-08-10, 无 GPU 的 P1 准备)
 
-## P2 故事定位与诚实边界
-- [ ] **OOD 结论谨慎处理**：现有 `output_ood_real` 中 learned_gate（纯容量）在 electricity_ood/traffic_ood 部分设置更强（traffic_ood pl96 +6.73% > full_v2 +5.20%）；`syn_ood` 上 full_v2 为 -1.21% 显著变差。**尚不能宣称"因果门控带来 OOD 鲁棒性"**——先排查 syn_ood 机制测试为何失败（spurious_strengths 配置 or 模型容量），否则此章会被审稿人反杀。
-- [ ] **写作**：按"场景依赖有效改进 + 修复版批不变性 + 门控结构诊断"三条主线扩展 `method_assessment.md` 为论文核心章节，limitation 明确低维/长 horizon 边界。
+- [x] `run_large.py` 敏感性分析参数透传 (`--n_envs --rff_dim --prior_weight --temperature`)。
+- [x] clone iTransformer / DLinear 官方代码 → `01_external/{iTransformer,DLinear}/code/`。
+- [x] 可视化脚本: `plot_bootstrap_ci.py` (bootstrap CI 误差棒图 + 数值表, 已跑通,
+      产出 `output_large_v2/improvement_bootstrap_ci.{png,md}`);
+      `plot_gate_heatmaps.py` (门控热图 + 诊断图, 已跑通, 产出 `vis_output/` 10 张图);
+      说明文档 `plot_visualization_README.md`。
+- [x] 熵正则 CPU smoke test: `output_entropy_smoke_{0,1}/`, 结论见
+      `output_entropy_smoke_1/README_smoke_entropy.md` (熵正则对 full_v2 生效,
+      对 gate_prior_only 无效 → 需接口扩展; P0-2 判据不一致复现)。
+- [x] 文献调研 prompt: `02_research_notes/literature_review_prompt.md` (待转发)。
+- [x] **P0-2** 统一 collapsed 判据 (0.01 常量, 两脚本同步)。
+- [x] **baseline 接入**: `models_ablation.py` 新增 DLinear/iTransformerModel,
+      `create_ablation_model` 支持 `--variants dlinear itransformer` (CPU 前向验证通过)。
+- [x] **熵正则接口扩展**: AblationBackbone/AblationModel 补 `get_gate_entropy()`,
+      gate_prior_only 熵正则生效验证通过。
+- [x] **调研归档**: → `02_research_notes/surveys/04_baseline_literature/`。
+- [x] **外部材料下载**: 01_external 新增 Crossformer/TimeXer/FOIL/Koopa (paper+code)
+      及 Adapformer/CSformer (paper)。
 
-## 本轮已完成（2026-08-08）
-- [x] **代码审查**：全量语法编译 + lint 通过；`full_v2_fixed` 的 running_stats 修复、门控诊断插桩、seed 配对 Wilcoxon+Holm、高维 OOM 防护均确认正确。
-- [x] **修复 run_large.py spawn seed bug**：`set_seed` 原只在主进程，spawn 子进程不继承 → seed 从未真正控制随机初始化。已在 `_train_one`/`_train_syn_ood` 内补 `set_seed(job['seed'])`。
-- [x] **性能优化**（默认开关全关，不改变旧结果可复现性）：
-  - `trainer.py`：`amp` 混合精度训练（仅 CUDA 生效，GradScaler + autocast，HSIC/门控仍在 causal_channel 内 fp32 保精度），预计提速 1.5-2x。
-  - `causal_channel.py`：HSIC 的 for 循环合并为一次 `bmm`（峰值显存不变）；`compute_stability_score_v2` 显式 fp32 防 AMP 下 HSIC 精度损失；注意力门控改 5D 广播，省去 `[bs*patch_num,nv,nv]` 显式拷贝。
-  - `data.py` + 两个 run 脚本：`get_dataloader` 支持 `pin_memory`，GPU 下自动开启。
-  - 用法：`run_large.py run --amp ...` / `run_minimal_falsifiable.py --amp`。
-- [ ] **注意**：`run_minimal_falsifiable.py` 仍是单进程串行（96 次训练不并行）——想提速可手动按 seed 分片开多进程（`--seeds 42 123 2024 7` 等跑在不同 GPU 上），或后续给脚本加 shard 逻辑。
+## 四b、第二轮已完成 (2026-08-10 晚, 0 GPU 收尾)
+
+- [x] **run_large 全流程 smoke** (syn_ood, `output_pipeline_smoke2/`):
+      gen → run(cpu) → summarize 全链路跑通; 敏感性参数 (n_envs=2) / 熵正则
+      (entropy_weight=0.01) / baseline (dlinear/itransformer) 全部在真实训练循环中验证。
+- [x] **修复 --epochs 未生效 bug**: build_kwargs 里 job['epochs'] 之前写死
+      `cfg['epochs']`, 覆盖参数未落地 (第一次 smoke 20 个 job 全按 50 epoch 跑,
+      patchtst 用了 1082s)。已改为 `epochs if epochs is not None else cfg['epochs']`,
+      二次验证 "Epoch 1/2" 生效, 单 job 降至 9–76s。
+- [x] **run_large.py 新增 `--epochs` 覆盖** (本地 smoke/GPU 试跑调短用)。
+- [x] **run_large.py 新增 `--dump_gates`** (强制 n_vars>21 也保存门控矩阵,
+      配合 P0-1 给 traffic/electricity 高维热图供数)。
+- [x] **`plot_gate_edge_boxplot.py`**: 因果/虚假/独立边门控权重箱线图 + 汇总表
+      (syn_ood 示例已出图, `vis_output/gate_edge_boxplot.{png,md}`)。
+- [x] **`dump_gates_eval.py`**: 从已有 checkpoint eval 提取门控矩阵 (不重训),
+      syn_ood 验证通过 (8 个矩阵导出, 无门控变体正确跳过)。
+- [x] **写作**: `02_research_notes/surveys/04_baseline_literature/vs_difference_argument.md`
+      (与各 baseline 的差异论证, 审稿 re2 §3 交付物);
+      `02_research_notes/paper_method_chapter_draft.md` (方法+实验章节草稿,
+      数字标 P0-1 重跑后替换)。
+
+## 五、历史遗留 (已修复/已完成, 供追溯)
+
+- [x] spawn seed bug (2026-08-08): 见 P0-1 说明。
+- [x] `output_large_v2` 720 结果 + `output_falsifiable_full` 80 条诊断 (2026-08-06/08)。
+- [x] Wilcoxon + Holm 显著性取代 t-test; full_v2_fixed running_stats 修复。
+
+## 六、项目整理记录 (2026-08-11, 按 research-org 规范)
+
+- [x] `02_research_notes/` 根目录散文件全部归档:
+      reviewer 评审链 (re1/re2/ood_diagnostic) → `ideas/01_adaptive_channel/02_review_*`;
+      论文草稿 → `ideas/01_adaptive_channel/06_paper_chapter_draft.md`;
+      调研 prompt → `surveys/04_baseline_literature/appendix_review_prompt.md`。
+- [x] `01_external/iTransformer/iTransformer_paper.pdf` → `iTransformer/paper/`
+      (与 code/ 并列, 符合 paper+code 同目录规范)。
+- [x] `03_experiments/CausalCIT/GPU验证任务说明.md` → 重命名并归档至
+      `experiments/gpu_verification_task.md` (英文命名)。
+- [ ] 遗留待清理 (用户决定): 根目录 `research-org.zip`、空中文文件夹
+      `转发文献调研任务至调研agent，支撑论文差异论证/` (内容已归档, 可删空壳)。
+- [ ] 可选: 清理全项目 `__pycache__/` 与 `*.pyc` (无害缓存, 规范允许)。

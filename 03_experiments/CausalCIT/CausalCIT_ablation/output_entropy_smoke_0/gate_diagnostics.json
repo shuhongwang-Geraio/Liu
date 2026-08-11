@@ -1,0 +1,35 @@
+[
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "full_v2",
+    "seed": 42,
+    "off_mean": 0.18675929307937622,
+    "off_std": 0.1619473546743393,
+    "off_min": 0.016035133972764015,
+    "off_max": 0.4808575510978699,
+    "collapsed": false
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "full_v2_fixed",
+    "seed": 42,
+    "off_mean": 0.1358851194381714,
+    "off_std": 0.02083369717001915,
+    "off_min": 0.10035791993141174,
+    "off_max": 0.15563839673995972,
+    "collapsed": false
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "gate_prior_only",
+    "seed": 42,
+    "off_mean": 0.1756013035774231,
+    "off_std": 0.0032692733220756054,
+    "off_min": 0.17008821666240692,
+    "off_max": 0.18403297662734985,
+    "collapsed": false
+  }
+]

@@ -1,0 +1,5 @@
+sparse(1)	_tmp_gencheck
+sparse(1)	output_pcd
+sparse(1)	output_pcd_full
+sparse(2)	output_pcd_smoke
+sparse(2)	output_verify

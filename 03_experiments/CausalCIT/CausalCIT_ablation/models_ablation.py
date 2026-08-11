@@ -423,6 +423,15 @@ class AblationBackbone(nn.Module):
             return self.causal_channel.get_diagnostics()
         return None
 
+    def get_gate_entropy(self):
+        """P1: 熵正则接口。转发给通道交互模块 (各 ChannelInteraction 若实现
+        get_last_entropy 则返回门控熵, 否则返回 None 由 trainer 跳过)。
+        修复(2026-08-10): 之前 AblationModel/AblationBackbone 均无此方法,
+        导致走 AblationModel 的变体 (gate_prior_only 等) 永远不触发熵正则。"""
+        if hasattr(self.causal_channel, 'get_last_entropy'):
+            return self.causal_channel.get_last_entropy()
+        return None
+
 
 class PriorOnly_ChannelInteraction(nn.Module):
     """诊断对照 (gate_prior_only): 与 full_v2 完全一致的门控结构
@@ -498,6 +507,85 @@ class PriorOnly_ChannelInteraction(nn.Module):
         return self.stability_gate.get_diagnostics()
 
 
+class PCD_ChannelInteraction(nn.Module):
+    """PCD (ICASSP'26, Dataset-Driven Channel Masks) 静态相关掩码门控对照变体.
+
+    与 full_v2 完全相同的通道注意力骨架 (CausalChannelAttentionTemporal +
+    fusion_proj + per_channel_alpha 优雅回退), 唯一差异在门控来源:
+      - full_v2  : 跨环境 HSIC 稳定性 (输入相关, 识别"强且稳定"的依赖)
+      - pcd_gate : 数据集级静态 Pearson 相关掩码 (不随输入变化, 无稳定性概念)
+    M = sigmoid(exp(scale_log) * (R - R.mean()) + beta),  R = |Pearson corr|.
+
+    用途: 最小可证伪测试 —— 若静态相关掩码也获得与 full_v2 相同增益,
+    则因果稳定性信号没有增量价值; 若在 OOD (虚假相关强度随环境漂移) 下
+    pcd_gate 明显更差, 则证明"跨环境稳定性"是必要成分。
+    """
+    def __init__(self, n_vars, d_model, patch_num, n_heads=4, n_envs=4,
+                 rff_dim=32, dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.05,
+                 temperature: float = 0.5, temporal_mix: bool = True,
+                 alpha_init: float = -2.0, **kwargs):
+        super().__init__()
+        self.n_vars = n_vars
+        self.d_model = d_model
+        self.patch_num = patch_num
+        self.prior_weight = prior_weight
+        self.temperature = temperature
+        self.temporal_mix = temporal_mix
+        # 数据集级静态相关掩码 (初始为单位阵, 训练前由 set_corr_matrix 注入)
+        self.register_buffer('R', torch.eye(n_vars))
+        self.register_buffer('_corr_ready', torch.tensor(0))
+        self.scale_log = nn.Parameter(torch.tensor(0.0))  # scale = exp(scale_log), 原论文 alpha_ds
+        self.beta = nn.Parameter(torch.tensor(0.0))
+        if temporal_mix:
+            self.channel_attn = CausalChannelAttentionTemporal(
+                d_model=d_model, n_heads=n_heads, n_vars=n_vars, dropout=dropout)
+        else:
+            self.channel_attn = CausalChannelAttention(
+                d_model=d_model, n_heads=n_heads, n_vars=n_vars, dropout=dropout)
+        self.fusion_proj = nn.Sequential(
+            nn.Linear(d_model, d_model), nn.GELU(),
+            nn.Dropout(dropout), nn.Linear(d_model, d_model),
+        )
+        init = alpha_init if alpha_init is not None else -2.0
+        self.alpha = nn.Parameter(torch.full((n_vars,), float(init)))
+
+    def set_corr_matrix(self, corr):
+        """注入数据集级相关矩阵 (训练前调用). corr: [nvars, nvars] 绝对相关值."""
+        self.R = corr.abs().detach().float()
+        self._corr_ready = torch.tensor(1)
+
+    def forward(self, x):
+        bs, nvars, d_model, patch_num = x.shape
+        R = self.R.to(x.device) if bool(self._corr_ready) else torch.eye(nvars, device=x.device)
+        R_bar = R - R.mean()
+        M = torch.sigmoid(torch.exp(self.scale_log) * R_bar + self.beta)
+        eye = torch.eye(nvars, device=x.device)
+        M = M * (1 - eye) + eye
+        gate_matrix = M.unsqueeze(0).expand(bs, nvars, nvars)
+        alpha_vec = torch.sigmoid(self.alpha).view(1, nvars, 1, 1)
+        if self.temporal_mix:
+            x_channel = self.channel_attn(x, gate_matrix)         # [bs, nvars, d_model, patch_num]
+            x_ch = x_channel.permute(0, 1, 3, 2)
+            x_ch = self.fusion_proj(x_ch).permute(0, 1, 3, 2)
+            out = (1 - alpha_vec) * x + alpha_vec * x_ch
+        else:
+            x_pooled = x.mean(dim=-1)
+            x_channel = self.channel_attn(x_pooled, gate_matrix)
+            x_channel_proj = self.fusion_proj(x_channel).unsqueeze(-1).expand_as(x)
+            out = (1 - alpha_vec) * x + alpha_vec * x_channel_proj
+        self.last_gate_matrix = gate_matrix.detach()
+        return out, gate_matrix
+
+    def get_gate_matrix(self):
+        return self.last_gate_matrix
+
+    def get_diagnostics(self):
+        return {'gate_type': 'PCDStaticMask',
+                'scale': float(torch.exp(self.scale_log).detach()),
+                'beta': float(self.beta.detach()),
+                'corr_ready': bool(self._corr_ready)}
+
+
 class AblationModel(nn.Module):
     """通用消融模型包装"""
     def __init__(self, channel_interaction_cls, enc_in, seq_len, pred_len,
@@ -528,6 +616,92 @@ class AblationModel(nn.Module):
 
     def get_diagnostics(self):
         return self.model.get_diagnostics()
+
+    def get_gate_entropy(self):
+        """P1: 熵正则接口, 转发给 backbone (同上, 2026-08-10 修复)。"""
+        return self.model.get_gate_entropy()
+
+
+# ============================================================
+# 新增 baseline: DLinear (AAAI 2023) / iTransformer (ICLR 2024)
+# 与 PatchTST/AblationModel 同一外层接口: forward(x) 输入 [bs, seq_len, nvars],
+# 输出 [bs, pred_len, nvars] (与 dataloader 的 batch_x/batch_y 对齐)。
+# 多余 kwargs 由 **kwargs 吸收, 以便 run_large.build_kwargs 公共参数直接透传。
+# ============================================================
+
+class DLinear(nn.Module):
+    """DLinear (cure-lab/LTSF-Linear): 移动平均分解趋势/季节, 各接线性层。
+    参考官方 DLinear.py, 自包含实现 (复用 models.layers.series_decomp)。"""
+    def __init__(self, enc_in, seq_len, pred_len, dropout=0.2, individual=False,
+                 kernel_size=25, **kwargs):
+        super().__init__()
+        self.enc_in = enc_in
+        self.seq_len = seq_len
+        self.pred_len = pred_len
+        self.individual = individual
+        self.decomp = series_decomp(kernel_size)
+        if individual:
+            self.Linear_Seasonal = nn.ModuleList(
+                [nn.Linear(seq_len, pred_len) for _ in range(enc_in)])
+            self.Linear_Trend = nn.ModuleList(
+                [nn.Linear(seq_len, pred_len) for _ in range(enc_in)])
+        else:
+            self.Linear_Seasonal = nn.Linear(seq_len, pred_len)
+            self.Linear_Trend = nn.Linear(seq_len, pred_len)
+
+    def forward(self, x):  # x: [bs, seq_len, nvars]
+        seasonal, trend = self.decomp(x)     # [bs, seq_len, nvars] × 2
+        seasonal = seasonal.permute(0, 2, 1)  # [bs, nvars, seq_len]
+        trend = trend.permute(0, 2, 1)
+        if self.individual:
+            out_s = torch.stack([self.Linear_Seasonal[i](seasonal[:, i])
+                                 for i in range(self.enc_in)], dim=1)
+            out_t = torch.stack([self.Linear_Trend[i](trend[:, i])
+                                 for i in range(self.enc_in)], dim=1)
+        else:
+            out_s = self.Linear_Seasonal(seasonal)  # [bs, nvars, pred_len]
+            out_t = self.Linear_Trend(trend)
+        out = out_s + out_t
+        return out.permute(0, 2, 1)  # [bs, pred_len, nvars]
+
+
+class iTransformerModel(nn.Module):
+    """iTransformer (thuml/iTransformer, ICLR 2024) 适配版: 倒置 Transformer,
+    以变量为 token 做通道维度自注意力。参考官方实现, 自包含 (无时间戳 embedding,
+    因为本 pipeline 数据不含 time-mark; 仅编码器 + 投影头)。
+    输入 [bs, seq_len, nvars], 输出 [bs, pred_len, nvars]。
+    """
+    def __init__(self, enc_in, seq_len, pred_len, e_layers=3, n_heads=4,
+                 d_model=64, d_ff=256, dropout=0.2, use_norm=True, **kwargs):
+        super().__init__()
+        self.seq_len = seq_len
+        self.pred_len = pred_len
+        self.use_norm = use_norm
+        # 倒置嵌入: 每变量整个回看窗口 -> d_model token
+        self.enc_embedding = nn.Sequential(
+            nn.Linear(seq_len, d_model),
+            nn.Dropout(dropout),
+        )
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model, nhead=n_heads, dim_feedforward=d_ff,
+            dropout=dropout, activation='gelu', batch_first=True,
+        )
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=e_layers)
+        self.projector = nn.Linear(d_model, pred_len, bias=True)
+
+    def forward(self, x):  # x: [bs, seq_len, nvars]
+        x = x.permute(0, 2, 1)              # [bs, nvars, seq_len]
+        if self.use_norm:  # Non-stationary Transformer 式实例归一化
+            means = x.mean(dim=-1, keepdim=True).detach()
+            x = x - means
+            stdev = torch.sqrt(torch.var(x, dim=-1, keepdim=True, unbiased=False) + 1e-5)
+            x = x / stdev
+        enc_out = self.enc_embedding(x)     # [bs, nvars, d_model]
+        enc_out = self.encoder(enc_out)     # [bs, nvars, d_model] (通道维注意力)
+        dec_out = self.projector(enc_out)   # [bs, nvars, pred_len]
+        if self.use_norm:
+            dec_out = dec_out * stdev + means
+        return dec_out.permute(0, 2, 1)     # [bs, pred_len, nvars]
 
 
 # ============================================================
@@ -605,6 +779,22 @@ def create_ablation_model(variant, **kwargs):
         # (与 'learned_gate' 实现完全相同，见上方注释 —— 只是这里是本方法族的"正式"命名)
         return AblationModel(LearnedGate_ChannelInteraction,
                              **{k: v for k, v in kwargs.items()})
+    elif variant == 'pcd_gate':
+        # PCD (ICASSP'26) 静态相关掩码对照: 数据集级 |Pearson corr| 掩码门控,
+        # 无跨环境稳定性/HSIC. 需在训练前由 run_pcd_compare 注入 corr 矩阵.
+        return AblationModel(PCD_ChannelInteraction,
+                             **{k: v for k, v in kwargs.items()})
+    elif variant == 'dlinear':
+        # 强 CI 基线 (AAAI 2023): 分解线性, 无通道交互 (回应审稿"补 baseline")
+        dl_keys = ['enc_in', 'seq_len', 'pred_len', 'dropout']
+        dl_kwargs = {k: v for k, v in kwargs.items() if k in dl_keys}
+        return DLinear(**dl_kwargs)
+    elif variant == 'itransformer':
+        # 通道注意力基线 (ICLR 2024): 倒置 Transformer (回应审稿"补 baseline")
+        it_keys = ['enc_in', 'seq_len', 'pred_len', 'e_layers', 'n_heads',
+                   'd_model', 'd_ff', 'dropout']
+        it_kwargs = {k: v for k, v in kwargs.items() if k in it_keys}
+        return iTransformerModel(**it_kwargs)
     elif variant == 'patchtst':
         # 只取PatchTST需要的参数
         pt_keys = ['enc_in', 'seq_len', 'pred_len', 'e_layers', 'n_heads',

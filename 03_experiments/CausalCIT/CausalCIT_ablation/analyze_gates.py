@@ -30,6 +30,11 @@ from collections import defaultdict
 import numpy as np
 
 # ---- 合成数据真值结构 (与 CausalCIT_demo/utils/data.py 的生成机制一致) ----
+# P0-2 (2026-08-10): 统一"门控坍缩"判据常量, 与 run_minimal_falsifiable.py 的
+# COLLAPSED_STD_THRESHOLD 保持一致 (非对角 std < 0.01)。之前 run_minimal_falsifiable
+# 用 1e-4 导致两份报告口径不一致, 已统一。
+COLLAPSED_STD_THRESHOLD = 0.01
+
 # gate[i, j] = query 通道 i 对 key 通道 j 的门控 (行=query)
 # 真因果边 (i<-j): Ch1<-Ch0, Ch2<-Ch0
 SYN_N = 7
@@ -71,7 +76,7 @@ def analyze_one(gm):
         off_mean=float(off.mean()), off_std=float(off.std()),
         off_min=float(off.min()), off_max=float(off.max()),
         off_range=float(off.max() - off.min()),
-        collapsed=bool(off.std() < 0.01),     # 塌缩判据: 非对角 std < 0.01
+        collapsed=bool(off.std() < COLLAPSED_STD_THRESHOLD),  # 塌缩判据: 非对角 std < 0.01
         mean_matrix=m,
     )
     if C == SYN_N:

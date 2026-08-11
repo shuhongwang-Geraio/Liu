@@ -26,5 +26,10 @@
 
 | 编号 | 名称 | 状态 |
 |------|------|------|
-| 01 | adaptive_channel | 已展开（proposal + competitive + major improvement）
+| 01 | adaptive_channel | 已展开（proposal + competitive + major improvement + review 链 + 战略分析 07）
 | 02 | multiscale_rg | 完整生命周期（spark → review → final）
+| 03 | invertible_decouple | 完整调研（report_final, 5 子问题中 3 个未覆盖）
+| 00_inbox | 脑暴合集 | `brainstorm_6ideas.md`（6 想法, 含检索增强★★★★★/自适应Patch）+ `2026-08-11_new_directions.md`（5 新方向 + 决策门 + 三根因发现）
+
+> 新方向决策门（2026-08-11）: 见 `00_inbox/2026-08-11_new_directions.md` §2 与 `do.md`「方向决策门」——
+> 先做第 0 步静态诊断（验证 RFF σ 与 HSIC 归一化两根因），据结果分支到 抢救 CausalCIT / 想法1(DRO) / 想法2(可逆解耦)。

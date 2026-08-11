@@ -28,3 +28,5 @@ assets/             图片、图表等附件
 |------|------|------|
 | 01 | adaptive_cicd | 自适应 CI/CD 通道交互机制调研
 | 02 | literature_overview | 时序预测文献综合分析
+| 03 | multiscale_causal_decoupling | 多尺度序列建模 + 多通道因果解耦前沿文献调研（2026-08）
+| 04 | baseline_literature | CausalCIT baseline/竞品文献调研：iTransformer/DLinear/Crossformer/Adapformer/CSformer/TimeXer/SOFTS/ModernTCN + 稳定学习 related work（2026-08）

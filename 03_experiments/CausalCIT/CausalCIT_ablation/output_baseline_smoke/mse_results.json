@@ -1,0 +1,35 @@
+[
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "patchtst",
+    "seed": 42,
+    "mse": 0.32599639892578125,
+    "mae": 0.39712926745414734,
+    "rmse": 0.5709609389305115,
+    "params": 225646,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "dlinear",
+    "seed": 42,
+    "mse": 0.41114696860313416,
+    "mae": 0.47618353366851807,
+    "rmse": 0.6412074565887451,
+    "params": 18624,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "itransformer",
+    "seed": 42,
+    "mse": 0.3358300030231476,
+    "mae": 0.4051084518432617,
+    "rmse": 0.5795084238052368,
+    "params": 162400,
+    "epochs": 2
+  }
+]

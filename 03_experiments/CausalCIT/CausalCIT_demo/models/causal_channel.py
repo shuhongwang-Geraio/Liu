@@ -22,15 +22,50 @@ class RFFKernel(nn.Module):
     """Random Fourier Features (RFF) 核近似
     将O(n^2)的核矩阵计算降低为O(nD)
     参考: Rahimi & Recht, NeurIPS 2007
+
+    修复 A (2026-08-11, 门1静态诊断确认): 原 sigma=1.0 硬编码导致
+    proj = x@W 的 std ≈ sqrt(d_model) ∈ [4, 8] (d_model=16~64), cos(proj) 剧烈震荡,
+    RFF 特征退化为伪随机向量, HSIC 估计失去通道区分度。
+    新增 sigma_mode='median': 首次 forward 从数据采样估计 median heuristic 带宽
+    (σ = 成对距离中位数), 使 proj 差分 O(1), 核恢复区分度。
+    默认 'fixed' 保持旧行为, 不影响已有结果复现。
     """
-    def __init__(self, input_dim, rff_dim=64, sigma=1.0):
+    def __init__(self, input_dim, rff_dim=64, sigma=1.0, sigma_mode='fixed'):
         super().__init__()
         self.rff_dim = rff_dim
-        self.register_buffer('W', torch.randn(input_dim, rff_dim) / sigma)
-        self.register_buffer('b', torch.rand(rff_dim) * 2 * math.pi)
+        self.sigma_mode = sigma_mode
+        self._median_sigma = None
+        if sigma_mode == 'fixed':
+            self.register_buffer('W', torch.randn(input_dim, rff_dim) / sigma)
+            self.register_buffer('b', torch.rand(rff_dim) * 2 * math.pi)
+        else:
+            # median 模式: 先注册占位, 首次 forward 时用数据估计 σ 后 copy_ 填充
+            self.register_buffer('W', torch.empty(input_dim, rff_dim))
+            self.register_buffer('b', torch.empty(rff_dim))
+
+    def _init_median_sigma(self, x):
+        """median heuristic: σ = 成对欧氏距离的中位数 (采样估计, 零成本, 一次性)。"""
+        with torch.no_grad():
+            n = x.shape[0]
+            k = min(n, 4096)
+            if k < 8:
+                # 样本过少, 退回默认
+                self._median_sigma = 1.0
+                self.W.normal_().div_(1.0)
+                self.b.uniform_(0, 2 * math.pi)
+                return
+            idx_a = torch.randint(0, n, (k,), device=x.device)
+            idx_b = torch.randint(0, n, (k,), device=x.device)
+            dist = (x[idx_a] - x[idx_b]).norm(dim=-1)      # [k]
+            med = dist.median().clamp(min=1e-3)
+            self._median_sigma = med.item()
+            self.W.normal_().div_(med)
+            self.b.uniform_(0, 2 * math.pi)
 
     def forward(self, x):
         # x: [batch, features] -> [batch, rff_dim]
+        if self.sigma_mode == 'median' and self._median_sigma is None:
+            self._init_median_sigma(x)
         proj = x @ self.W + self.b
         return math.sqrt(2.0 / self.rff_dim) * torch.cos(proj)
 
@@ -48,7 +83,8 @@ class CausalStabilityGate(nn.Module):
                  stability_threshold=0.1, temperature=1.0, learn_temperature=True,
                  prior_weight: float = 0.3, stability_v2: bool = False,
                  prior_only: bool = False,
-                 running_stats: bool = False, running_momentum: float = 0.1):
+                 running_stats: bool = False, running_momentum: float = 0.1,
+                 rff_sigma_mode: str = 'fixed', cka_normalize: bool = False):
         super().__init__()
         self.n_vars = n_vars
         self.d_model = d_model
@@ -57,6 +93,11 @@ class CausalStabilityGate(nn.Module):
         self.prior_weight = prior_weight
         self.stability_v2 = stability_v2
         self.prior_only = prior_only
+        # 修复 A+B (2026-08-11): rff_sigma_mode='median' 用 median heuristic 带宽;
+        # cka_normalize=True 对 HSIC 做 CKA 归一化 (HSIC/√(HSIC_xx·HSIC_yy))。
+        # 均默认关闭, 不改变旧行为; 修复版需显式开启 (见 run_large FULL_V2_KWARGS)。
+        self.rff_sigma_mode = rff_sigma_mode
+        self.cka_normalize = cka_normalize
         # 修复(回应评审 re2 §2.2): stability_v2 把 batch 维一起池化估 HSIC，
         # 若测试时直接用当前 batch 的 hsic_mean/std，同一个测试样本换一批"同伴"
         # 门控矩阵就会变 —— 预测结果依赖 batch 组成，这在部署/复现上是硬伤。
@@ -70,7 +111,7 @@ class CausalStabilityGate(nn.Module):
             self.register_buffer('running_hsic_mean', torch.zeros(n_vars, n_vars))
             self.register_buffer('running_hsic_std', torch.zeros(n_vars, n_vars))
             self.register_buffer('num_batches_tracked', torch.tensor(0, dtype=torch.long))
-        self.rff_kernel = RFFKernel(d_model, rff_dim)
+        self.rff_kernel = RFFKernel(d_model, rff_dim, sigma=1.0, sigma_mode=rff_sigma_mode)
         self.stability_bias = nn.Parameter(torch.zeros(1))
         self.channel_prior = nn.Parameter(torch.zeros(n_vars, n_vars))
         # gate_mlp 输出原始logit（不再内置Sigmoid），配合可学习温度缩放后再做sigmoid。
@@ -158,6 +199,12 @@ class CausalStabilityGate(nn.Module):
         # (都是 C×P×C 的中间张量), 但减少调度开销, 高维(如 traffic 862 通道)更快。
         hsic = torch.bmm(Kf, Kf.transpose(1, 2)) / P           # [E, C, C]
         hsic_mean = hsic.mean(dim=0)                        # [C,C] 依赖强度
+        if self.cka_normalize:
+            # 修复 B (2026-08-11): CKA 归一化, 使不同通道对的可比性摆脱 HSIC 尺度
+            # 差异 (未归一化 HSIC 跨通道对可差 1-2 个数量级, 淹没稳定性信号)。
+            diag = torch.diagonal(hsic_mean, dim1=-2, dim2=-1)  # [C]
+            denom = torch.sqrt(diag.unsqueeze(-1) * diag.unsqueeze(-2) + 1e-8)
+            hsic_mean = hsic_mean / denom.clamp(min=1e-8)
         hsic_std = hsic.std(dim=0)
         if self.running_stats:
             if self.training:
@@ -356,7 +403,8 @@ class CausalChannelInteraction(nn.Module):
                  rff_dim=32, dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3,
                  temporal_mix: bool = False, temperature: float = 1.0,
                  stability_v2: bool = False, per_channel_alpha: bool = False,
-                 alpha_init: float = None, running_stats: bool = False):
+                 alpha_init: float = None, running_stats: bool = False,
+                 rff_sigma_mode: str = 'fixed', cka_normalize: bool = False):
         super().__init__()
         self.n_vars = n_vars
         self.d_model = d_model
@@ -369,6 +417,7 @@ class CausalChannelInteraction(nn.Module):
             n_vars=n_vars, d_model=d_model, n_envs=n_envs, rff_dim=rff_dim,
             prior_weight=prior_weight, temperature=temperature,
             stability_v2=stability_v2, running_stats=running_stats,
+            rff_sigma_mode=rff_sigma_mode, cka_normalize=cka_normalize,
         )
         if temporal_mix:
             self.channel_attn = CausalChannelAttentionTemporal(

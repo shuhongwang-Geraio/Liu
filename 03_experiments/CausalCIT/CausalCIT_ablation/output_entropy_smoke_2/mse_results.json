@@ -1,0 +1,24 @@
+[
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "gate_prior_only",
+    "seed": 42,
+    "mse": 0.3280356526374817,
+    "mae": 0.4001096785068512,
+    "rmse": 0.5727439522743225,
+    "params": 250841,
+    "epochs": 1
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "full_v2",
+    "seed": 42,
+    "mse": 0.32804280519485474,
+    "mae": 0.4001207649707794,
+    "rmse": 0.5727502107620239,
+    "params": 250841,
+    "epochs": 1
+  }
+]

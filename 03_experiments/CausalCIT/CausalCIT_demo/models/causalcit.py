@@ -38,7 +38,8 @@ class CausalCIT_backbone(nn.Module):
                  channel_dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3,
                  temporal_mix: bool = False, temperature: float = 1.0,
                  stability_v2: bool = False, per_channel_alpha: bool = False,
-                 alpha_init: float = None, running_stats: bool = False, **kwargs):
+                 alpha_init: float = None, running_stats: bool = False,
+                 rff_sigma_mode: str = 'fixed', cka_normalize: bool = False, **kwargs):
         super().__init__()
 
         # RevIN
@@ -72,6 +73,7 @@ class CausalCIT_backbone(nn.Module):
         self.causal_channel = CausalChannelInteraction(
             n_vars=c_in, d_model=d_model, patch_num=patch_num,
             n_heads=n_channel_heads, n_envs=n_envs, rff_dim=rff_dim,
+            rff_sigma_mode=rff_sigma_mode, cka_normalize=cka_normalize,
             dropout=channel_dropout, fusion_alpha=fusion_alpha,
             prior_weight=prior_weight,
             temporal_mix=temporal_mix, temperature=temperature,
@@ -134,7 +136,8 @@ class CausalCIT(nn.Module):
                  channel_dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3,
                  temporal_mix: bool = False, temperature: float = 1.0,
                  stability_v2: bool = False, per_channel_alpha: bool = False,
-                 alpha_init: float = None, running_stats: bool = False, **kwargs):
+                 alpha_init: float = None, running_stats: bool = False,
+                 rff_sigma_mode: str = 'fixed', cka_normalize: bool = False, **kwargs):
         super().__init__()
         self.decomposition = decomposition
         backbone_kwargs = dict(
@@ -150,6 +153,7 @@ class CausalCIT(nn.Module):
             temporal_mix=temporal_mix, temperature=temperature,
             stability_v2=stability_v2, running_stats=running_stats,
             per_channel_alpha=per_channel_alpha, alpha_init=alpha_init,
+            rff_sigma_mode=rff_sigma_mode, cka_normalize=cka_normalize,
         )
         if decomposition:
             self.decomp_module = series_decomp(kernel_size)

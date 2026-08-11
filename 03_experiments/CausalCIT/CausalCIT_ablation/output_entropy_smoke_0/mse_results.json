@@ -1,0 +1,46 @@
+[
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "patchtst",
+    "seed": 42,
+    "mse": 0.32599639892578125,
+    "mae": 0.39712926745414734,
+    "rmse": 0.5709609389305115,
+    "params": 225646,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "full_v2",
+    "seed": 42,
+    "mse": 0.32555633783340454,
+    "mae": 0.3970540761947632,
+    "rmse": 0.5705754160881042,
+    "params": 250841,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "full_v2_fixed",
+    "seed": 42,
+    "mse": 0.3255256712436676,
+    "mae": 0.39708808064460754,
+    "rmse": 0.5705485939979553,
+    "params": 250841,
+    "epochs": 2
+  },
+  {
+    "dataset": "syn_ood",
+    "pred_len": 96,
+    "variant": "gate_prior_only",
+    "seed": 42,
+    "mse": 0.32554757595062256,
+    "mae": 0.397098571062088,
+    "rmse": 0.570567786693573,
+    "params": 250841,
+    "epochs": 2
+  }
+]

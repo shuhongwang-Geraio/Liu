@@ -21,6 +21,38 @@ A full README template is available at `references/README_template.md` -- copy i
 
 Note: papers and code for the same project stay together under one folder (e.g., `PatchTST/paper/` and `PatchTST/code/`), NOT separated into global `papers/` and `code/` dirs.
 
+## Project Progress Tracking: `PROGRESS.md`
+
+Every research project must keep a `PROGRESS.md` at the project root (alongside the README).
+It is the single source of truth for "where we are" and "what to do next".
+
+**Content contract** (keep concise):
+- `## 项目目标` -- one-paragraph goal
+- `## 当前状态` -- two sub-lists:
+  - `### 已完成` -- finished work (checkmarks, with commit hashes / key artifacts when useful)
+  - `### 未完成 / 有问题` -- known gaps, broken pieces, stalled items (with details)
+- `## 下一步 (按优先级)` -- ordered actionable next steps, each with the concrete entry command/path
+- `## 备注` -- project-specific gotchas, conventions, archived/deleted-file notes
+
+**Rules**:
+- Update `PROGRESS.md` at the **end of every work session** (or after any significant change):
+  mark what was completed, what regressed, and refresh the "下一步" list accordingly.
+- Keep it factual and minimal -- do not copy full analysis here; link or summarize instead.
+- When deleting old/obsolete documents (e.g. outdated review notes), record the deletion in
+  `## 备注` with the note that content can be recovered from git history.
+- Do NOT delete `PROGRESS.md`; it replaces ad-hoc **status** documents.
+
+**Functional docs may coexist with `PROGRESS.md`**:
+PROGRESS.md replaces *status* documents ("where we are / what's next"), NOT functional
+documents that answer different questions:
+- `DATA.md` -- data map (where data/artifacts live, how to reproduce): keep
+- runbook / `do.md` -- detailed executable commands, decision gates, stop-loss rules: keep
+Rule of thumb: if a doc answers "where are we / what to do next" it must fold into
+`PROGRESS.md`; if it answers "where is the data / how exactly to run X" it may stay,
+but `PROGRESS.md` should reference (link) it instead of duplicating its content.
+Root-level doc layout: `README.md` (conventions + snapshot) + `PROGRESS.md` (status,
+single source of truth) + optional functional docs (`DATA.md`, `do.md`).
+
 ## Layer 1: `01_external/` -- Papers & External Code
 
 ```
@@ -134,7 +166,15 @@ When asked to organize a project:
 4. Move files with `git mv` (if git repo) or regular move
 5. Write `_README.md` convention docs for `ideas/` and `surveys/`
 6. Write root `README.md` using the template in `references/README_template.md`
-7. Clean up old empty directories
+7. Write root `PROGRESS.md` (see "Project Progress Tracking" section) capturing current
+   status and next steps
+8. Keep any necessary functional docs (data map `DATA.md`, runbook `do.md`) that
+   `PROGRESS.md` references; fold pure status docs into `PROGRESS.md`
+9. Clean up old empty directories
+
+In addition, whenever working in any research project (not just organizing), update the
+project's `PROGRESS.md` at the end of the session per the rules in the
+"Project Progress Tracking" section.
 
 ## Cleanup Rules
 

@@ -128,11 +128,22 @@ def seq_for_pl(pl):
 
 
 # full_v2 的改进超参 (经诊断验证的默认值)
+# 2026-08-11 门1静态诊断修复: rff_sigma_mode='median' + cka_normalize=True
+# (见 causal_channel.py 修 A+B)。仅影响 full_v2/full_v2_fixed。
+# 注意: P0-1 重跑后旧报告数字不可直接对比 (这是修复版协议)。
 FULL_V2_KWARGS = dict(prior_weight=0.05, temperature=0.5,
-                       alpha_init=-2.0)
+                       alpha_init=-2.0,
+                       rff_sigma_mode='median', cka_normalize=True)
 
 
-def build_kwargs(ds, pl, variant, seed, dataset_dir, entropy_weight=0.0):
+def build_kwargs(ds, pl, variant, seed, dataset_dir, entropy_weight=0.0,
+                 n_envs=None, rff_dim=None, prior_weight=None, temperature=None,
+                 epochs=None, dump_gates=False):
+    """构造单个 job。
+
+    敏感性分析支持 (P1): 通过 n_envs/rff_dim/prior_weight/temperature 覆盖
+    模型默认超参 (默认 None = 保持 build_kwargs 内的默认值, 不影响旧结果可复现性)。
+    """
     cfg = dataset_config(ds)
     n_vars = cfg['n_vars']
     seq_len = seq_for_pl(pl)
@@ -144,37 +155,45 @@ def build_kwargs(ds, pl, variant, seed, dataset_dir, entropy_weight=0.0):
         n_channel_heads=4, n_envs=4, rff_dim=32,
         channel_dropout=0.1, fusion_alpha=0.3,
     )
+    if n_envs is not None:
+        base['n_envs'] = n_envs
+    if rff_dim is not None:
+        base['rff_dim'] = rff_dim
     job = dict(
         dataset=ds, pred_len=pl, variant=variant, seed=seed,
-        n_vars=n_vars, epochs=cfg['epochs'], patience=cfg['patience'],
+        n_vars=n_vars, epochs=epochs if epochs is not None else cfg['epochs'],
+        patience=cfg['patience'],
         batch_size=cfg['batch_size'], dataset_dir=dataset_dir,
         model_kwargs=base,
         # 回应评审re2 §2.3/§6.1: entropy_weight 之前从未被传给 trainer.train()，
         # 一直是死代码。这里显式写进 job，由 _train_one/_train_syn_ood 传下去。
         # 默认 0.0，不影响旧结果的可复现性；测试该正则化效果时用 --entropy_weight>0。
         entropy_weight=entropy_weight,
+        # P1 可视化: 默认只在 n_vars<=21 时 dump 门控矩阵; --dump_gates 强制
+        # 高维 (traffic 862 / electricity 321) 也 dump, 供聚类热图/边箱线图使用。
+        dump_gates=dump_gates,
     )
-    if variant == 'full_v2':
+    # 变体专属超参: 敏感性分析时用显式传入值覆盖默认, 否则保持原默认
+    if variant in ('full_v2', 'full_v2_fixed'):
         base.update(FULL_V2_KWARGS)
-    elif variant == 'full_v2_fixed':
-        base.update(FULL_V2_KWARGS)
-    elif variant in ('learned_gate', 'capacity_match'):
-        # 容量匹配对照(回应评审刀2): 与 full_v2 同参数规模(含 N×N 门控), 但无因果稳定性逻辑
+        if prior_weight is not None:
+            base['prior_weight'] = prior_weight
+        if temperature is not None:
+            base['temperature'] = temperature
+    elif variant in ('learned_gate', 'capacity_match', 'gate_prior_only'):
+        # capacity_match(答刀2): 同参数规模的纯学习通道注意力, 无因果稳定性逻辑
+        # gate_prior_only(答刀1): 与 full_v2 同结构但剥离稳定性/HSIC 信号
         base.update(dict(prior_weight=0.05, alpha_init=-2.0))
-    elif variant == 'gate_prior_only':
-        # 诊断对照(回应评审刀1): 与 full_v2 完全一致的门控结构,
-        # 但剥离稳定性/HSIC信号 (PriorOnly_ChannelInteraction 默认即
-        # temporal_mix=True/alpha_init=-2.0/temperature=0.5/prior_weight=0.05,
-        # 恰好等于 full_v2 结构, 仅 gate 不吃稳定性信号).
-        # 注意: AblationBackbone 不会把 temporal_mix 等透传给交互模块,
-        # 故这里只覆盖 prior_weight / alpha_init (其余由默认值保证).
-        base.update(dict(prior_weight=0.05, alpha_init=-2.0))
+        if prior_weight is not None:
+            base['prior_weight'] = prior_weight
     elif variant == 'no_env':
         # 直击评审刀1 (原指控: full vs w/o EnvSplit 仅差 0.04%):
         # 与 full_v2 同结构/同 prior_weight, 但全局HSIC(不划分环境).
         # 只传 prior_weight —— NoEnv_ChannelInteraction.__init__ 不接受
         # temperature/alpha_init 等 full_v2 专属参数, 传了会报非法 kwarg.
         base.update(dict(prior_weight=0.05))
+        if prior_weight is not None:
+            base['prior_weight'] = prior_weight
     return job
 
 
@@ -197,13 +216,23 @@ def gen_jobs(args):
     variants = args.variants
     seeds = [int(s) for s in args.seeds]
     ew = getattr(args, 'entropy_weight', 0.0)
+    # P1 敏感性分析: 覆盖超参 (None = 用模型默认)
+    n_envs = getattr(args, 'n_envs', None)
+    rff_dim = getattr(args, 'rff_dim', None)
+    p_weight = getattr(args, 'prior_weight', None)
+    temp = getattr(args, 'temperature', None)
+    epochs = getattr(args, 'epochs', None)
+    dump_gates = getattr(args, 'dump_gates', False)
     jobs = []
     for ds in args.datasets:
         cfg = dataset_config(ds)
         for pl in cfg['pred_lens']:
             for v in variants:
                 for s in seeds:
-                    jobs.append(build_kwargs(ds, pl, v, s, dataset_dir, entropy_weight=ew))
+                    jobs.append(build_kwargs(ds, pl, v, s, dataset_dir, entropy_weight=ew,
+                                             n_envs=n_envs, rff_dim=rff_dim,
+                                             prior_weight=p_weight, temperature=temp,
+                                             epochs=epochs, dump_gates=dump_gates))
     # 贪心装箱: 按代价降序分配到当前总代价最小的 shard (保证各 shard 总代价均衡)
     jobs_sorted = sorted(jobs, key=est_cost, reverse=True)
     shards = [[] for _ in range(args.num_shards)]
@@ -280,9 +309,9 @@ def _train_one(job, device, out_dir):
                          entropy_weight=job.get('entropy_weight', 0.0),
                          amp=job.get('amp', False))
     res = trainer.test(test_loader)
-    # 小数据集保存门控矩阵 (用于分析)
+    # 保存门控矩阵 (用于分析): 默认仅低维; --dump_gates 强制高维 (traffic/electricity)
     try:
-        if hasattr(model, 'get_gate_matrix') and cfg['n_vars'] <= 21 and variant in ('full_v2', 'full_v2_fixed'):
+        if hasattr(model, 'get_gate_matrix') and (cfg['n_vars'] <= 21 or job.get('dump_gates')) and variant in ('full_v2', 'full_v2_fixed'):
             gm = model.get_gate_matrix()
             if gm is not None:
                 gdir = os.path.join(out_dir, 'gates')
@@ -344,7 +373,7 @@ def _train_syn_ood(job, device, out_dir):
                          amp=job.get('amp', False))
     res = trainer.test(test_loader)
     try:
-        if hasattr(model, 'get_gate_matrix') and cfg['n_vars'] <= 21 and variant in ('full_v2', 'full_v2_fixed', 'learned_gate', 'gate_prior_only', 'capacity_match', 'no_env'):
+        if hasattr(model, 'get_gate_matrix') and (cfg['n_vars'] <= 21 or job.get('dump_gates')) and variant in ('full_v2', 'full_v2_fixed', 'learned_gate', 'gate_prior_only', 'capacity_match', 'no_env'):
             gm = model.get_gate_matrix()
             if gm is not None:
                 gdir = os.path.join(out_dir, 'gates')
@@ -718,6 +747,19 @@ def parse_args():
     g.add_argument('--dataset_dir', default=None)
     g.add_argument('--entropy_weight', type=float, default=0.0,
                    help='门控熵正则化系数(回应评审re2 §2.3, 默认0=旧行为不变)')
+    # P1 敏感性分析: 覆盖 full_v2 关键超参, 证明结论不依赖超参脆点 (均默认 None=不变)
+    g.add_argument('--n_envs', type=int, default=None,
+                   help='覆盖环境切分数 n_envs (敏感性分析, 默认4)')
+    g.add_argument('--rff_dim', type=int, default=None,
+                   help='覆盖 RFF 特征维度 rff_dim (敏感性分析, 默认32)')
+    g.add_argument('--prior_weight', type=float, default=None,
+                   help='覆盖先验权重 prior_weight (敏感性分析, 默认0.05)')
+    g.add_argument('--temperature', type=float, default=None,
+                   help='覆盖门控温度 temperature (敏感性分析, 默认0.5)')
+    g.add_argument('--epochs', type=int, default=None,
+                   help='覆盖训练轮数 (默认用 dataset_config; 本地 smoke/调试时设小值)')
+    g.add_argument('--dump_gates', action='store_true',
+                   help='强制 dump 门控矩阵 (默认仅 n_vars<=21; 用于 traffic/electricity 高维热图)')
 
     r = sub.add_parser('run')
     r.add_argument('--device', default='cuda:0')

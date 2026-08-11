@@ -1,0 +1,7 @@
+dataset,pred_len,variant,seed,mse,mae,rmse,params,epochs,time
+syn_ood,96,patchtst,42,0.325996,0.397129,0.570961,225646,2,81.8
+syn_ood,96,dlinear,42,0.411147,0.476184,0.641207,18624,2,8.2
+syn_ood,96,itransformer,42,0.335830,0.405108,0.579508,162400,2,21.3
+syn_ood,192,patchtst,42,0.347007,0.421317,0.589073,299470,2,76.2
+syn_ood,192,dlinear,42,0.510927,0.544563,0.714792,37248,2,9.5
+syn_ood,192,itransformer,42,0.354766,0.426557,0.595622,168640,2,18.3

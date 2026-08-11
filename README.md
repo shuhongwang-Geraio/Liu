@@ -2,6 +2,38 @@
 
 适用于以「读论文 → 做调研 → 写代码」为核心循环的科研项目。
 
+> 更新: 2026-08-11
+
+## 本项目当前结构（快照）
+
+```
+Liu/
+├── 01_external/            # 外部论文与代码 (40+ 项目, 每项目 paper/ + code/)
+├── 02_research_notes/      # 我们的笔记 / 想法 / 调研
+│   ├── paper_reading/      #   论文逐篇解读（当前为空）
+│   ├── ideas/              #   研究想法生命周期 (00_inbox, 01_adaptive_channel, ...)
+│   └── surveys/            #   系统性调研 (01_adaptive_cicd ~ 04_baseline_literature)
+├── 03_experiments/         # 我们自己的代码
+│   └── CausalCIT/          #   主实验: demo → ablation → exp_v2 → output
+├── DATA.md                 # 数据地图: 数据/产物放哪、怎么获取
+├── PROGRESS.md             # 进度单一事实来源 (按 research-org 规范, 简洁概览)
+├── do.md                   # 详细待办执行清单 (GPU 命令 / 决策门 / P2, 与 PROGRESS 互补)
+├── problem.md              # 历史诊断报告索引与结论摘要
+└── README.md               # 本文档 (三层结构规范)
+```
+
+**根目录文档角色**：
+- `DATA.md` — 数据/产物位置与获取方式（大数据不进 git）
+- `PROGRESS.md` — **进度单一事实来源**（目标/状态/下一步/备注，会话结束必更新）
+- `do.md` — 详细待办执行清单（决策门、GPU 命令、止损规则；PROGRESS 的"执行层"）
+- `problem.md` — 历史诊断报告索引与结论摘要
+
+**遗留待清理项（2026-08-11）**：
+- 根目录 `research-org.zip`（平台缓存副本，规范建议删除）
+- 根目录空文件夹 `转发文献调研任务至调研agent，支撑论文差异论证/`（内容已归档至
+  `02_research_notes/surveys/04_baseline_literature/`，可删除空壳）
+- `__pycache__/` 与 `*.pyc`（无害缓存，规范允许清理，可择机统一删除）
+
 ## Three-Layer Structure
 
 ```

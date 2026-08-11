@@ -66,6 +66,12 @@ DEFAULT_VARIANTS = ['patchtst', 'full_v2', 'full_v2_fixed',
                     'capacity_match', 'gate_prior_only', 'no_env']
 DEFAULT_SEEDS = [42, 123, 2024, 7, 13, 99, 2023, 31]
 
+# P0-2 (2026-08-10): 统一"门控坍缩"判据 = 非对角 std < 0.01, 与 analyze_gates.py 一致。
+# 之前本文件用 1e-4, analyze_gates.py 用 0.01, 差 100 倍导致同一个门控在两份报告里
+# 结论相反 (smoke test 复现: gate_prior_only off_std=0.0033 在 1e-4 判据=未坍缩,
+# 在 0.01 判据=坍缩)。统一常量后任何新报告口径一致。
+COLLAPSED_STD_THRESHOLD = 0.01
+
 
 # ============================================================
 # 训练单个 (variant, seed, pred_len) —— 与 run_large._train_one 同一套
@@ -152,7 +158,7 @@ def gate_collapse_check(model, test_set, device, batch_size=32, max_batches=5):
     allv = np.concatenate(vals)
     return dict(off_mean=float(allv.mean()), off_std=float(allv.std()),
                off_min=float(allv.min()), off_max=float(allv.max()),
-               collapsed=bool(allv.std() < 1e-4))
+               collapsed=bool(allv.std() < COLLAPSED_STD_THRESHOLD))
 
 
 def batch_invariance_check(model, test_set, device, batch_size=32,
