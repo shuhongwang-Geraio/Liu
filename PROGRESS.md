@@ -1,7 +1,7 @@
 # PROGRESS.md — CausalCIT 项目进度单一事实来源
 
 > 按 research-org 规范维护。每次工作会话结束更新；详细待办命令见 `do.md`。
-> 最近更新: 2026-08-11
+> 最近更新: 2026-08-12
 
 ## 项目目标
 
@@ -22,15 +22,20 @@ PatchTST backbone + HSIC 稳定性门控），论证其对 OOD 泛化的价值�
 - [x] PCD 初步发现：`full_v2 ≈ pcd_gate`，机制测试未通过（`docs/pcd/pcd_preliminary_findings.md`）
 - [x] 文献/调研归档：`surveys/04_baseline_literature/`、外部材料补全至 01_external
 - [x] 战略分析：`ideas/01_adaptive_channel/07_scope_and_publication_risk_analysis.md` + 新方向脑暴 `00_inbox/2026-08-11_new_directions.md`
+- [x] **GPU 验证靶场（2026-08-11 夜 ~ 08-12）**：修复版 `full_v2_fixed`（median+cka）8-seed 重跑
+      weather/electricity/traffic，输出 `output_large_v3`。**决策门 2 通过**：weather 旧负收益翻正
+      (pl96 +2.7~+4.8%、pl192 +1.1~+1.4%)，electricity 提升加大 (pl96 +5.3~+8.3%)；weather pl336 仍轻微负
+      (-1.2~-2.1%，符合长 horizon 退化假设)。注：旧 `output_large_v2` PatchTST 仅 3-seed，靶场为方向性验证，
+      最终显著性由 P0-1 主表 (含 8-seed PatchTST) 给出。
+- [x] **P0-1 重跑主表（2026-08-12 gen 完成，待启动）**：6 数据集 × 6 变体 × 8 seed + `--dump_gates`，
+      816 job / 3 shard 已 `gen`，输出 `output_large_v3`。启动命令见下方"下一步"。
 
 ### 未完成 / 有问题
-- [ ] **GPU 验证靶场**（最高优先）：修复版（median+cka）8-seed 重跑 weather/electricity/traffic，
-      看负收益是否翻正。修复版是新协议，与旧数字不可直接对比。
 - [ ] 根因 3（语义环境切分）未修：`cv≈0.005`，稳定性项仍无信息（需时间戳/真实数据）
-- [ ] P0-1 重跑主表（seed bug 修复后）尚未执行，旧数字均不可最终采信
 - [ ] syn_ood 机制测试未通过（−1.21%）；PCD 与 full_v2 打平
-- [ ] 高维门控矩阵（traffic/electricity）未 dump，聚类热图缺数据
+- [ ] 高维门控矩阵（traffic/electricity）未 dump，聚类热图缺数据（P0-1 已带 --dump_gates，跑完可补）
 - [ ] 遗留待清理：根目录 `research-org.zip`、空中文文件夹、`__pycache__`
+- [ ] P0-1 主表 gen 完成（816 job），**待用户确认启动**（预计 1 天+），`output_large_v3` 最终报告待生成
 
 ## 下一步 (按优先级)
 
