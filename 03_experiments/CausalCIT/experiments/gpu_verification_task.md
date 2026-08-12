@@ -202,3 +202,10 @@ python run_large.py gen --datasets traffic electricity etth1 ettm1 weather excha
   已执行完毕，结论归档（修复方向正确，后续被更严重的 spawn seed bug 掩盖）。
 - **v3 (2026-08-11)**：全面重写。反映门 1 诊断 + 修 A+B + spawn seed 修复后的最新协议，
   主线为验证靶场（门 2 判据）+ P0-1 主表重跑 + P1 系列。
+- **v3.1 (2026-08-12)**：P0-1 已回传部分结果 (b1403aa, 27%)：高维 `full_v2_fixed` 8-seed 全面翻正
+  (traffic pl192 +12.1%, weather pl96 +5.2%, 详见 PROGRESS.md「P0-1 部分结果快照」)。
+  ⚠️ 执行侧注意：
+  (a) 提交结果时请按 §6 一并回传汇总 md（不要只用 commit message）；
+  (b) "跑完了" 与实际进度不符会误导主控 —— 请以 `_DONE.txt` / `progress.py` 为准，并说明剩余 job；
+  (c) P0-1 gen 变体请保持 §4 五变体，或明确记录实际改动（本次快照含 full_v2/no_gate、无 capacity_match，已记录）。
+  新增待跑任务（修 C semantic / 3b syn_ood / DRO λ）命令见 `do.md`「GPU 待跑」，前置代码已就绪并 CPU 验证。

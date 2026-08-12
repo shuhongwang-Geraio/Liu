@@ -18,6 +18,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
+import inspect
 import sys, os
 
 # 复用CausalCIT_demo的基础组件
@@ -364,7 +365,8 @@ class AblationBackbone(nn.Module):
                  d_ff=256, dropout=0., padding_patch=None,
                  individual=False, revin=True, affine=True, subtract_last=False,
                  n_channel_heads=4, n_envs=4, rff_dim=32,
-                 channel_dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3, **kwargs):
+                 channel_dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3,
+                 env_mode: str = 'uniform', **kwargs):
         super().__init__()
         self.revin = revin
         if self.revin:
@@ -384,19 +386,25 @@ class AblationBackbone(nn.Module):
             pe='zeros', learn_pe=True, **kwargs
         )
 
-        self.causal_channel = channel_interaction_cls(
-            n_vars=c_in, d_model=d_model, patch_num=patch_num,
-            n_heads=n_channel_heads, n_envs=n_envs, rff_dim=rff_dim,
-            dropout=channel_dropout, fusion_alpha=fusion_alpha,
-            prior_weight=prior_weight,
-        )
+        ci_kwargs = dict(n_vars=c_in, d_model=d_model, patch_num=patch_num,
+                         n_heads=n_channel_heads, n_envs=n_envs, rff_dim=rff_dim,
+                         dropout=channel_dropout, fusion_alpha=fusion_alpha,
+                         prior_weight=prior_weight)
+        # 修 C (2026-08-12): 仅把 env_mode 传给支持它的交互类
+        # (CausalChannelInteraction 系); 其余变体 (NoEnv/NoGate/LearnedGate 等) 不接受。
+        if 'env_mode' in inspect.signature(channel_interaction_cls).parameters:
+            ci_kwargs['env_mode'] = env_mode
+        self.causal_channel = channel_interaction_cls(**ci_kwargs)
+        # 语义模式 forward 需要接收 env_labels (仅 CausalChannelInteraction 支持)
+        self._ci_accepts_env = ('env_labels' in
+                                inspect.signature(self.causal_channel.forward).parameters)
 
         self.head_nf = d_model * patch_num
         self.head = Flatten_Head(individual, c_in, self.head_nf,
                                  target_window, head_dropout=0)
         self.last_gate_matrix = None
 
-    def forward(self, z):
+    def forward(self, z, env_labels=None):
         if self.revin:
             z = z.permute(0, 2, 1)
             z = self.revin_layer(z, 'norm')
@@ -406,7 +414,10 @@ class AblationBackbone(nn.Module):
         z = z.unfold(dimension=-1, size=self.patch_len, step=self.stride)
         z = z.permute(0, 1, 3, 2)
         z = self.backbone(z)
-        z, gate_matrix = self.causal_channel(z)
+        if env_labels is not None and self._ci_accepts_env:
+            z, gate_matrix = self.causal_channel(z, env_labels)
+        else:
+            z, gate_matrix = self.causal_channel(z)
         self.last_gate_matrix = gate_matrix.detach()
         z = self.head(z)
         if self.revin:
@@ -592,7 +603,8 @@ class AblationModel(nn.Module):
                  e_layers=3, n_heads=4, d_model=64, d_ff=256,
                  dropout=0.2, patch_len=16, stride=8, padding_patch='end',
                  n_channel_heads=4, n_envs=4, rff_dim=64,
-                 channel_dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3, **kwargs):
+                 channel_dropout=0.1, fusion_alpha=0.3, prior_weight: float = 0.3,
+                 env_mode: str = 'uniform', **kwargs):
         super().__init__()
         self.model = AblationBackbone(
             c_in=enc_in, context_window=seq_len, target_window=pred_len,
@@ -602,12 +614,12 @@ class AblationModel(nn.Module):
             d_ff=d_ff, dropout=dropout, padding_patch=padding_patch,
             n_channel_heads=n_channel_heads, n_envs=n_envs, rff_dim=rff_dim,
             channel_dropout=channel_dropout, fusion_alpha=fusion_alpha,
-            prior_weight=prior_weight,
+            prior_weight=prior_weight, env_mode=env_mode,
         )
 
-    def forward(self, x):
+    def forward(self, x, env_labels=None):
         x = x.permute(0, 2, 1)
-        x = self.model(x)
+        x = self.model(x, env_labels)
         x = x.permute(0, 2, 1)
         return x
 

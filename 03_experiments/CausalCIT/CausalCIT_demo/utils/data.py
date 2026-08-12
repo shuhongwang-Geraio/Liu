@@ -11,13 +11,44 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
 
 
+# 语义环境切分方案 (修 C / 想法 1 DRO 共用, 2026-08-12)
+# 依据: assess_env_split.py 可行性评估 —— season/daynight/tod 有信息 (4-14x vs 随机均分),
+#       wd (工作日/周末) 单独无信息 (1.2-1.9x), 保留但默认不推荐单独使用。
+ENV_SCHEMES = {
+    'season':   lambda dt: (dt.dt.month % 12 // 3),                                  # 0=冬 1=春 2=夏 3=秋
+    'daynight': lambda dt: ((dt.dt.hour < 6) | (dt.dt.hour >= 18)).astype(int),      # 0=昼 1=夜
+    'tod':      lambda dt: (dt.dt.hour // 6),                                        # 0-6/6-12/12-18/18-24
+    'wd':       lambda dt: (dt.dt.dayofweek >= 5).astype(int),                       # 0=工作日 1=周末
+}
+
+
+def _build_env_labels(df, border1, border2, env_scheme):
+    """从时间戳列解析语义环境标签, 并按 [border1, border2) 切分 (与数据行对齐)。
+
+    返回 np.int64 数组, 长度 = border2-border1; border1/border2 为 None 时取全量。
+    """
+    if env_scheme is None:
+        return None
+    if env_scheme not in ENV_SCHEMES:
+        raise ValueError(f"未知 env_scheme: {env_scheme} (可选: {list(ENV_SCHEMES)})")
+    dt = pd.to_datetime(df.iloc[:, 0])
+    labels = ENV_SCHEMES[env_scheme](dt)
+    b1 = border1 if border1 is not None else 0
+    b2 = border2 if border2 is not None else len(labels)
+    return labels[b1:b2].to_numpy(dtype=np.int64)
+
+
 class ETTDataset(Dataset):
     """ETT数据集加载器"""
     def __init__(self, data_path, seq_len=96, pred_len=96, flag='train',
-                 scale=True, freq='h'):
+                 scale=True, freq='h', env_scheme=None):
+        """env_scheme (修 C / DRO): None=返回(x,y) 保持旧行为;
+        否则返回 (x, y, env_label), 语义环境标签由时间戳解析
+        (season/daynight/tod/wd, 见模块级 ENV_SCHEMES)。"""
         self.seq_len = seq_len
         self.pred_len = pred_len
         self.scale = scale
+        self.env_scheme = env_scheme
 
         type_map = {'train': 0, 'val': 1, 'test': 2}
         self.set_type = type_map[flag]
@@ -57,6 +88,7 @@ class ETTDataset(Dataset):
             df_data = self.scaler.transform(df_data)
 
         self.data = df_data[border1:border2]
+        self.env_labels = _build_env_labels(df, border1, border2, env_scheme)
 
     def __len__(self):
         return len(self.data) - self.seq_len - self.pred_len + 1
@@ -67,6 +99,10 @@ class ETTDataset(Dataset):
         r_end = s_end + self.pred_len
         seq_x = self.data[s_begin:s_end]       # [seq_len, n_vars]
         seq_y = self.data[s_end:r_end]         # [pred_len, n_vars]
+        if self.env_labels is not None:
+            return (torch.tensor(seq_x, dtype=torch.float32),
+                    torch.tensor(seq_y, dtype=torch.float32),
+                    int(self.env_labels[s_begin]))
         return (torch.tensor(seq_x, dtype=torch.float32),
                 torch.tensor(seq_y, dtype=torch.float32))
 
@@ -85,10 +121,12 @@ class TemporalOODDataset(Dataset):
 
     def __init__(self, data_path, seq_len=96, pred_len=96, flag='train',
                  scale=True, freq='h', train_frac=0.5, val_frac=0.1,
-                 test_frac=0.25, gap_frac=0.15):
+                 test_frac=0.25, gap_frac=0.15, env_scheme=None):
+        """env_scheme (修 C / DRO): None=返回(x,y); 否则返回 (x,y,env_label)。"""
         self.seq_len = seq_len
         self.pred_len = pred_len
         self.scale = scale
+        self.env_scheme = env_scheme
 
         df = pd.read_csv(data_path)
         cols = df.columns[1:]  # 去掉date列
@@ -116,6 +154,7 @@ class TemporalOODDataset(Dataset):
             df_data = self.scaler.transform(df_data)
 
         self.data = df_data[border1:border2]
+        self.env_labels = _build_env_labels(df, border1, border2, env_scheme)
 
     def __len__(self):
         return len(self.data) - self.seq_len - self.pred_len + 1
@@ -126,6 +165,10 @@ class TemporalOODDataset(Dataset):
         r_end = s_end + self.pred_len
         seq_x = self.data[s_begin:s_end]
         seq_y = self.data[s_end:r_end]
+        if self.env_labels is not None:
+            return (torch.tensor(seq_x, dtype=torch.float32),
+                    torch.tensor(seq_y, dtype=torch.float32),
+                    int(self.env_labels[s_begin]))
         return (torch.tensor(seq_x, dtype=torch.float32),
                 torch.tensor(seq_y, dtype=torch.float32))
 

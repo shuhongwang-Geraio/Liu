@@ -138,6 +138,8 @@ FULL_V2_KWARGS = dict(prior_weight=0.05, temperature=0.5,
 
 def build_kwargs(ds, pl, variant, seed, dataset_dir, entropy_weight=0.0,
                  n_envs=None, rff_dim=None, prior_weight=None, temperature=None,
+                 alpha_init=None, fusion_alpha=None,
+                 env_mode=None, env_scheme=None, risk_lambda=0.0,
                  epochs=None, dump_gates=False):
     """构造单个 job。
 
@@ -159,6 +161,8 @@ def build_kwargs(ds, pl, variant, seed, dataset_dir, entropy_weight=0.0,
         base['n_envs'] = n_envs
     if rff_dim is not None:
         base['rff_dim'] = rff_dim
+    if fusion_alpha is not None:
+        base['fusion_alpha'] = fusion_alpha
     job = dict(
         dataset=ds, pred_len=pl, variant=variant, seed=seed,
         n_vars=n_vars, epochs=epochs if epochs is not None else cfg['epochs'],
@@ -172,6 +176,10 @@ def build_kwargs(ds, pl, variant, seed, dataset_dir, entropy_weight=0.0,
         # P1 可视化: 默认只在 n_vars<=21 时 dump 门控矩阵; --dump_gates 强制
         # 高维 (traffic 862 / electricity 321) 也 dump, 供聚类热图/边箱线图使用。
         dump_gates=dump_gates,
+        # 修 C / 想法 1 (2026-08-12): env_scheme 数据层语义切分 (None=旧行为);
+        # risk_lambda>0 启用 DRO 式风险厌恶损失 (Trainer 层)。
+        env_scheme=env_scheme,
+        risk_lambda=risk_lambda,
     )
     # 变体专属超参: 敏感性分析时用显式传入值覆盖默认, 否则保持原默认
     if variant in ('full_v2', 'full_v2_fixed'):
@@ -180,6 +188,10 @@ def build_kwargs(ds, pl, variant, seed, dataset_dir, entropy_weight=0.0,
             base['prior_weight'] = prior_weight
         if temperature is not None:
             base['temperature'] = temperature
+        if alpha_init is not None:
+            base['alpha_init'] = alpha_init
+        if env_mode is not None:
+            base['env_mode'] = env_mode
     elif variant in ('learned_gate', 'capacity_match', 'gate_prior_only'):
         # capacity_match(答刀2): 同参数规模的纯学习通道注意力, 无因果稳定性逻辑
         # gate_prior_only(答刀1): 与 full_v2 同结构但剥离稳定性/HSIC 信号
@@ -221,6 +233,11 @@ def gen_jobs(args):
     rff_dim = getattr(args, 'rff_dim', None)
     p_weight = getattr(args, 'prior_weight', None)
     temp = getattr(args, 'temperature', None)
+    a_init = getattr(args, 'alpha_init', None)
+    f_alpha = getattr(args, 'fusion_alpha', None)
+    env_mode = getattr(args, 'env_mode', None)
+    env_scheme = getattr(args, 'env_scheme', None)
+    risk_lambda = getattr(args, 'risk_lambda', 0.0)
     epochs = getattr(args, 'epochs', None)
     dump_gates = getattr(args, 'dump_gates', False)
     jobs = []
@@ -232,6 +249,9 @@ def gen_jobs(args):
                     jobs.append(build_kwargs(ds, pl, v, s, dataset_dir, entropy_weight=ew,
                                              n_envs=n_envs, rff_dim=rff_dim,
                                              prior_weight=p_weight, temperature=temp,
+                                             alpha_init=a_init, fusion_alpha=f_alpha,
+                                             env_mode=env_mode, env_scheme=env_scheme,
+                                             risk_lambda=risk_lambda,
                                              epochs=epochs, dump_gates=dump_gates))
     # 贪心装箱: 按代价降序分配到当前总代价最小的 shard (保证各 shard 总代价均衡)
     jobs_sorted = sorted(jobs, key=est_cost, reverse=True)
@@ -281,15 +301,19 @@ def _train_one(job, device, out_dir):
     data_path = os.path.join(job['dataset_dir'], csv_name)
     seq_len = job['model_kwargs']['seq_len']
 
+    # 修 C (2026-08-12): env_scheme 非 None 时 Dataset 返回 (x, y, env_label) 三元组,
+    # 驱动语义环境切分 (season/daynight/tod); None = 旧行为二元组。
+    env_scheme = job.get('env_scheme')
     if ds.endswith('_ood'):
         # 显式时序漂移: 训练=早期时段, 测试=晚期时段, 之间留 gap 最大化分布漂移
         ood_kwargs = dict(train_frac=0.5, val_frac=0.1, test_frac=0.25, gap_frac=0.15)
         def mk(f):
             return TemporalOODDataset(data_path, seq_len=seq_len, pred_len=pl,
-                                      flag=f, **ood_kwargs)
+                                      flag=f, env_scheme=env_scheme, **ood_kwargs)
     else:
         def mk(f):
-            return ETTDataset(data_path, seq_len=seq_len, pred_len=pl, flag=f)
+            return ETTDataset(data_path, seq_len=seq_len, pred_len=pl, flag=f,
+                              env_scheme=env_scheme)
 
     pin = device.startswith('cuda')   # GPU 下 pin_memory 加快 host->device 拷贝
     train_set = mk('train')
@@ -307,7 +331,8 @@ def _train_one(job, device, out_dir):
     hist = trainer.train(train_loader, val_loader, epochs=job['epochs'],
                          lr=0.001, patience=job['patience'], save_dir=save_dir,
                          entropy_weight=job.get('entropy_weight', 0.0),
-                         amp=job.get('amp', False))
+                         amp=job.get('amp', False),
+                         risk_lambda=job.get('risk_lambda', 0.0))
     res = trainer.test(test_loader)
     # 保存门控矩阵 (用于分析): 默认仅低维; --dump_gates 强制高维 (traffic/electricity)
     try:
@@ -370,7 +395,8 @@ def _train_syn_ood(job, device, out_dir):
     hist = trainer.train(train_loader, val_loader, epochs=job['epochs'],
                          lr=0.001, patience=job['patience'], save_dir=save_dir,
                          entropy_weight=job.get('entropy_weight', 0.0),
-                         amp=job.get('amp', False))
+                         amp=job.get('amp', False),
+                         risk_lambda=job.get('risk_lambda', 0.0))
     res = trainer.test(test_loader)
     try:
         if hasattr(model, 'get_gate_matrix') and (cfg['n_vars'] <= 21 or job.get('dump_gates')) and variant in ('full_v2', 'full_v2_fixed', 'learned_gate', 'gate_prior_only', 'capacity_match', 'no_env'):
@@ -756,6 +782,18 @@ def parse_args():
                    help='覆盖先验权重 prior_weight (敏感性分析, 默认0.05)')
     g.add_argument('--temperature', type=float, default=None,
                    help='覆盖门控温度 temperature (敏感性分析, 默认0.5)')
+    g.add_argument('--alpha_init', type=float, default=None,
+                   help='覆盖融合系数初始值 alpha_init (syn_ood 识别-利用脱节排查, 默认-2.0)')
+    g.add_argument('--fusion_alpha', type=float, default=None,
+                   help='覆盖通道混合残差权重 fusion_alpha (syn_ood 排查, 默认0.3)')
+    g.add_argument('--env_mode', type=str, default=None,
+                   choices=['uniform', 'semantic'],
+                   help='修 C: 环境切分模式 (uniform=旧行为patch均分; semantic=按时间戳语义分组)')
+    g.add_argument('--env_scheme', type=str, default=None,
+                   choices=['season', 'daynight', 'tod', 'wd'],
+                   help='修 C: 语义环境方案 (semantic 模式需要, 默认 season)')
+    g.add_argument('--risk_lambda', type=float, default=0.0,
+                   help='想法1 DRO: 跨环境风险厌恶系数 (0=ERM; >0 用 L=mean_e+λ*var_e)')
     g.add_argument('--epochs', type=int, default=None,
                    help='覆盖训练轮数 (默认用 dataset_config; 本地 smoke/调试时设小值)')
     g.add_argument('--dump_gates', action='store_true',

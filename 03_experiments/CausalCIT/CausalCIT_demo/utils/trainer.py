@@ -4,6 +4,7 @@
 
 import os
 import time
+import inspect
 import numpy as np
 import torch
 import torch.nn as nn
@@ -43,9 +44,41 @@ class Trainer:
     def __init__(self, model, device='cuda' if torch.cuda.is_available() else 'cpu'):
         self.model = model.to(device)
         self.device = device
+        # 修 C / DRO (2026-08-12): 判断模型 forward 是否接受 env_labels 参数
+        # (仅 CausalCIT 系支持); 不支持的模型在 env 模式下自动忽略 env_labels。
+        self._model_accepts_env = 'env_labels' in inspect.signature(
+            self.model.forward).parameters
+
+    def _predict(self, batch_x, env_labels):
+        """forward: env_labels 仅传给支持它的模型 (语义切分模式)。"""
+        if env_labels is not None and self._model_accepts_env:
+            return self.model(batch_x, env_labels)
+        return self.model(batch_x)
+
+    @staticmethod
+    def _dpo_loss(pred, target, env_labels, criterion, risk_lambda):
+        """想法 1 (DRO 式风险厌恶): L = E_e[ℓ_e] + λ·Var_e[ℓ_e]。
+
+        环境 e 由 batch 内样本的语义标签定义 (季节/昼夜/时段)。
+        环境数 <2 时退化为普通 ERM (风险惩罚无意义)。
+        """
+        if risk_lambda <= 0 or env_labels is None:
+            return criterion(pred, target)
+        env_ids = torch.unique(env_labels)
+        losses = []
+        for e in env_ids:
+            mask = env_labels == e
+            if mask.sum() < 1:
+                continue
+            losses.append(criterion(pred[mask], target[mask]))
+        if len(losses) < 2:
+            return criterion(pred, target)
+        L = torch.stack(losses)
+        return L.mean() + risk_lambda * L.var()
 
     def train(self, train_loader, val_loader, epochs=20, lr=0.001,
-              patience=5, save_dir='./checkpoints', entropy_weight=0.0, amp=False):
+              patience=5, save_dir='./checkpoints', entropy_weight=0.0, amp=False,
+              risk_lambda=0.0):
         """
         entropy_weight: P1优化 — 门控熵正则化系数 (默认0，不影响旧行为)。
             若>0且模型实现了get_gate_entropy()，会在loss中加入
@@ -74,14 +107,25 @@ class Trainer:
         for epoch in range(epochs):
             self.model.train()
             epoch_loss = []
-            for batch_x, batch_y in train_loader:
+            for batch in train_loader:
+                # 三元组 (x, y, env_label): 修 C 语义切分 / 想法 1 DRO 需要环境标签
+                if isinstance(batch, (list, tuple)) and len(batch) == 3:
+                    batch_x, batch_y, env_raw = batch
+                    env_labels = torch.as_tensor(env_raw, device=self.device)
+                else:
+                    batch_x, batch_y = batch
+                    env_labels = None
                 batch_x = batch_x.to(self.device)
                 batch_y = batch_y.to(self.device)
                 optimizer.zero_grad()
                 if use_amp:
                     with torch.cuda.amp.autocast():
-                        pred = self.model(batch_x)
-                        loss = criterion(pred, batch_y)
+                        pred = self._predict(batch_x, env_labels)
+                        if risk_lambda > 0:
+                            loss = self._dpo_loss(pred, batch_y, env_labels,
+                                                  criterion, risk_lambda)
+                        else:
+                            loss = criterion(pred, batch_y)
                         if supports_entropy:
                             gate_entropy = self.model.get_gate_entropy()
                             if gate_entropy is not None:
@@ -92,8 +136,12 @@ class Trainer:
                     scaler.step(optimizer)
                     scaler.update()
                 else:
-                    pred = self.model(batch_x)
-                    loss = criterion(pred, batch_y)
+                    pred = self._predict(batch_x, env_labels)
+                    if risk_lambda > 0:
+                        loss = self._dpo_loss(pred, batch_y, env_labels,
+                                              criterion, risk_lambda)
+                    else:
+                        loss = criterion(pred, batch_y)
                     if supports_entropy:
                         gate_entropy = self.model.get_gate_entropy()
                         if gate_entropy is not None:
@@ -137,15 +185,21 @@ class Trainer:
         losses = []
         use_amp = getattr(self, '_amp', False)
         with torch.no_grad():
-            for batch_x, batch_y in val_loader:
+            for batch in val_loader:
+                if isinstance(batch, (list, tuple)) and len(batch) == 3:
+                    batch_x, batch_y, env_raw = batch
+                    env_labels = torch.as_tensor(env_raw, device=self.device)
+                else:
+                    batch_x, batch_y = batch
+                    env_labels = None
                 batch_x = batch_x.to(self.device)
                 batch_y = batch_y.to(self.device)
                 if use_amp:
                     with torch.cuda.amp.autocast():
-                        pred = self.model(batch_x)
+                        pred = self._predict(batch_x, env_labels)
                         loss = criterion(pred, batch_y)
                 else:
-                    pred = self.model(batch_x)
+                    pred = self._predict(batch_x, env_labels)
                     loss = criterion(pred, batch_y)
                 losses.append(loss.item())
         return np.mean(losses)
@@ -155,14 +209,20 @@ class Trainer:
         preds, trues = [], []
         use_amp = getattr(self, '_amp', False)
         with torch.no_grad():
-            for batch_x, batch_y in test_loader:
+            for batch in test_loader:
+                if isinstance(batch, (list, tuple)) and len(batch) == 3:
+                    batch_x, batch_y, env_raw = batch
+                    env_labels = torch.as_tensor(env_raw, device=self.device)
+                else:
+                    batch_x, batch_y = batch
+                    env_labels = None
                 batch_x = batch_x.to(self.device)
                 batch_y = batch_y.to(self.device)
                 if use_amp:
                     with torch.cuda.amp.autocast():
-                        pred = self.model(batch_x)
+                        pred = self._predict(batch_x, env_labels)
                 else:
-                    pred = self.model(batch_x)
+                    pred = self._predict(batch_x, env_labels)
                 preds.append(pred.cpu().numpy())
                 trues.append(batch_y.cpu().numpy())
         preds = np.concatenate(preds, axis=0)

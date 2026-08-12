@@ -84,7 +84,8 @@ class CausalStabilityGate(nn.Module):
                  prior_weight: float = 0.3, stability_v2: bool = False,
                  prior_only: bool = False,
                  running_stats: bool = False, running_momentum: float = 0.1,
-                 rff_sigma_mode: str = 'fixed', cka_normalize: bool = False):
+                 rff_sigma_mode: str = 'fixed', cka_normalize: bool = False,
+                 env_mode: str = 'uniform'):
         super().__init__()
         self.n_vars = n_vars
         self.d_model = d_model
@@ -98,6 +99,10 @@ class CausalStabilityGate(nn.Module):
         # 均默认关闭, 不改变旧行为; 修复版需显式开启 (见 run_large FULL_V2_KWARGS)。
         self.rff_sigma_mode = rff_sigma_mode
         self.cka_normalize = cka_normalize
+        # 修 C (2026-08-12): env_mode='uniform' 保持旧行为 (batch 内 patch 均分);
+        # env_mode='semantic' 时按样本的语义环境标签 (时间戳: 季节/昼夜/时段) 分组估 HSIC,
+        # 由 forward 接收的 env_labels 驱动 (可行性见 docs/diagnostics/2026-08-12_env_split_feasibility.md)。
+        self.env_mode = env_mode
         # 修复(回应评审 re2 §2.2): stability_v2 把 batch 维一起池化估 HSIC，
         # 若测试时直接用当前 batch 的 hsic_mean/std，同一个测试样本换一批"同伴"
         # 门控矩阵就会变 —— 预测结果依赖 batch 组成，这在部署/复现上是硬伤。
@@ -228,9 +233,54 @@ class CausalStabilityGate(nn.Module):
         stability = hsic_mean / (1.0 + cv + self.stability_bias.abs())
         return stability.unsqueeze(0).expand(bs, nvars, nvars)
 
-    def forward(self, x):
+    def compute_stability_score_semantic(self, x, env_labels):
+        """修 C: 语义环境切分版稳定性分数。
+
+        与 compute_stability_score_v2 的区别: 环境不是"batch 内 patch 均分",
+        而是按每个样本的**语义环境标签** (由时间戳解析, 季节/昼夜/时段) 分组。
+        每个语义环境内的样本×patch 一起池化估 HSIC, 再跨语义环境看依赖强度
+        是否稳定 —— 语义环境经 assess_env_split.py 验证信息量是随机均分的 4-14x。
+
+        x: [bs, nvars, patch_num, d_model]
+        env_labels: [bs] 每样本一个语义环境标签 (int)
+        returns: [bs, nvars, nvars]
+        """
+        bs, nvars, patch_num, d_model = x.shape
+        x = x.float()
+        z = self.rff_kernel(x.reshape(-1, d_model)).reshape(bs, nvars, patch_num, self.rff_dim)
+        z = z - z.mean(dim=2, keepdim=True)          # 逐样本中心化
+        env_ids = torch.unique(env_labels)
+        hsic_envs = []
+        for e in env_ids:
+            ze = z[env_labels == e]                  # [n_e, nvars, patch_num, rff]
+            n_e = ze.shape[0]
+            if n_e < 1:
+                continue
+            ze = ze.permute(1, 0, 2, 3).reshape(nvars, n_e * patch_num, self.rff_dim)
+            ze = ze - ze.mean(dim=1, keepdim=True)   # 逐环境中心化
+            m = ze.shape[1]
+            P = m * m
+            K = torch.einsum('cma,cna->cmn', ze, ze)             # [nvars, m, m]
+            Kf = K.reshape(nvars, P)                             # [nvars, P]
+            hsic_envs.append(torch.mm(Kf, Kf.t()) / P)           # [nvars, nvars]
+        if len(hsic_envs) < 2:
+            # 单环境无跨环境稳定性可言, 退化为 v2 (patch 均分) 保持行为
+            return self.compute_stability_score_v2(x)
+        hsic = torch.stack(hsic_envs)                # [E, nvars, nvars]
+        hsic_mean = hsic.mean(dim=0).clamp(min=1e-8)
+        if self.cka_normalize:
+            diag = torch.diagonal(hsic_mean, dim1=-2, dim2=-1)
+            denom = torch.sqrt(diag.unsqueeze(-1) * diag.unsqueeze(-2) + 1e-8)
+            hsic_mean = hsic_mean / denom.clamp(min=1e-8)
+        hsic_std = hsic.std(dim=0)
+        cv = hsic_std / (hsic_mean + 1e-6)
+        stability = hsic_mean / (1.0 + cv + self.stability_bias.abs())
+        return stability.unsqueeze(0).expand(bs, nvars, nvars)
+
+    def forward(self, x, env_labels=None):
         """
         x: [bs, nvars, patch_num, d_model]
+        env_labels: [bs] 可选。env_mode='semantic' 时的语义环境标签。
         returns: gate_matrix [bs, nvars, nvars] ∈ [0,1]
         """
         temp = self.temperature_param.clamp(min=0.1, max=10.0)
@@ -244,7 +294,10 @@ class CausalStabilityGate(nn.Module):
             logit = logit + self.prior_weight * self.channel_prior.unsqueeze(0)
             gate = torch.sigmoid(logit / temp)
         elif self.stability_v2:
-            stability = self.compute_stability_score_v2(x)
+            if self.env_mode == 'semantic' and env_labels is not None:
+                stability = self.compute_stability_score_semantic(x, env_labels)
+            else:
+                stability = self.compute_stability_score_v2(x)
             # 逐batch标准化非对角依赖分数，保证进入MLP前尺度良好、可分化
             mean = stability.mean(dim=(1, 2), keepdim=True)
             std = stability.std(dim=(1, 2), keepdim=True) + 1e-6
@@ -404,7 +457,8 @@ class CausalChannelInteraction(nn.Module):
                  temporal_mix: bool = False, temperature: float = 1.0,
                  stability_v2: bool = False, per_channel_alpha: bool = False,
                  alpha_init: float = None, running_stats: bool = False,
-                 rff_sigma_mode: str = 'fixed', cka_normalize: bool = False):
+                 rff_sigma_mode: str = 'fixed', cka_normalize: bool = False,
+                 env_mode: str = 'uniform'):
         super().__init__()
         self.n_vars = n_vars
         self.d_model = d_model
@@ -418,6 +472,7 @@ class CausalChannelInteraction(nn.Module):
             prior_weight=prior_weight, temperature=temperature,
             stability_v2=stability_v2, running_stats=running_stats,
             rff_sigma_mode=rff_sigma_mode, cka_normalize=cka_normalize,
+            env_mode=env_mode,
         )
         if temporal_mix:
             self.channel_attn = CausalChannelAttentionTemporal(
@@ -442,14 +497,15 @@ class CausalChannelInteraction(nn.Module):
             init = alpha_init if alpha_init is not None else fusion_alpha
             self.alpha = nn.Parameter(torch.tensor(float(init)))
 
-    def forward(self, x):
+    def forward(self, x, env_labels=None):
         """
         x: [bs, nvars, d_model, patch_num]
+        env_labels: [bs] 可选。env_mode='semantic' 时透传给稳定性门控。
         returns: (out, gate_matrix)
         """
         bs, nvars, d_model, patch_num = x.shape
         x_for_gate = x.permute(0, 1, 3, 2)   # [bs, nvars, patch_num, d_model]
-        gate_matrix = self.stability_gate(x_for_gate)
+        gate_matrix = self.stability_gate(x_for_gate, env_labels)
         if self.per_channel_alpha:
             alpha_vec = torch.sigmoid(self.alpha).view(1, nvars, 1, 1)  # [1,nvars,1,1]
         else:

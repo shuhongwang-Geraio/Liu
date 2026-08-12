@@ -101,7 +101,23 @@ the set of inter-channel dependencies that survive across environments.
 This is the first time, to our knowledge, that cross-environment stability
 is used as the admission criterion for channel mixing in MTSF."
 
+### 3.1 PCD (ICASSP'26) — 从"威胁"转"资产"（方案 4，2026-08-12 落实）
+
+PCD（Pattern-Cognizant Decoupling，ICASSP'26）独立报告**与我们完全相同的维度规律**：
+高维数据集（PEMS，170–883 通道）+12.7%~40.2%，低维数据集（ETTh1/2）仅 0.3%~2.8%。
+而我们的主表（旧协议）同样显示 traffic/electricity（高维）显著为正、ETT/ILI（低维）不占优。
+
+**论文措辞（不回避、主动引用）**:
+> "两项独立工作在完全不同的实现（PCD: 静态相关掩码; CausalCIT: RFF-HSIC 跨环境稳定性门控）
+> 与不同数据集族上观测到同一维度规律 —— 这提示 **'通道交互的价值取决于数据集依赖结构'
+> 是一个真实现象**，而非某一方法的实现细节。我们的贡献是给出**解释该现象**（跨环境稳定性门控）
+> 并能**事先判定**它何时有效的诊断框架（训练前适用性判据，见论文 §X）。"
+
+这样 PCD 从"我们的机制与简单掩码打平"的威胁，变成"现象真实存在"的独立佐证。
+
 ---
+
+
 
 ## 4. 论文中如何呈现（推荐结构）
 

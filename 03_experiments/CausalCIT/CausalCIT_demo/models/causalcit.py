@@ -39,7 +39,8 @@ class CausalCIT_backbone(nn.Module):
                  temporal_mix: bool = False, temperature: float = 1.0,
                  stability_v2: bool = False, per_channel_alpha: bool = False,
                  alpha_init: float = None, running_stats: bool = False,
-                 rff_sigma_mode: str = 'fixed', cka_normalize: bool = False, **kwargs):
+                 rff_sigma_mode: str = 'fixed', cka_normalize: bool = False,
+                 env_mode: str = 'uniform', **kwargs):
         super().__init__()
 
         # RevIN
@@ -79,6 +80,7 @@ class CausalCIT_backbone(nn.Module):
             temporal_mix=temporal_mix, temperature=temperature,
             stability_v2=stability_v2, running_stats=running_stats,
             per_channel_alpha=per_channel_alpha, alpha_init=alpha_init,
+            env_mode=env_mode,
         )
 
         # Head
@@ -91,7 +93,7 @@ class CausalCIT_backbone(nn.Module):
 
         self.last_gate_matrix = None
 
-    def forward(self, z):
+    def forward(self, z, env_labels=None):
         # z: [bs, nvars, seq_len]
         if self.revin:
             z = z.permute(0, 2, 1)
@@ -102,7 +104,7 @@ class CausalCIT_backbone(nn.Module):
         z = z.unfold(dimension=-1, size=self.patch_len, step=self.stride)
         z = z.permute(0, 1, 3, 2)
         z = self.backbone(z)                           # [bs, nvars, d_model, patch_num]
-        z, gate_matrix = self.causal_channel(z)        # ★ 因果通道交互
+        z, gate_matrix = self.causal_channel(z, env_labels)   # ★ 因果通道交互 (语义模式透传 env_labels)
         self.last_gate_matrix = gate_matrix.detach()
         z = self.head(z)
         if self.revin:
@@ -137,7 +139,8 @@ class CausalCIT(nn.Module):
                  temporal_mix: bool = False, temperature: float = 1.0,
                  stability_v2: bool = False, per_channel_alpha: bool = False,
                  alpha_init: float = None, running_stats: bool = False,
-                 rff_sigma_mode: str = 'fixed', cka_normalize: bool = False, **kwargs):
+                 rff_sigma_mode: str = 'fixed', cka_normalize: bool = False,
+                 env_mode: str = 'uniform', **kwargs):
         super().__init__()
         self.decomposition = decomposition
         backbone_kwargs = dict(
@@ -154,6 +157,7 @@ class CausalCIT(nn.Module):
             stability_v2=stability_v2, running_stats=running_stats,
             per_channel_alpha=per_channel_alpha, alpha_init=alpha_init,
             rff_sigma_mode=rff_sigma_mode, cka_normalize=cka_normalize,
+            env_mode=env_mode,
         )
         if decomposition:
             self.decomp_module = series_decomp(kernel_size)
@@ -162,18 +166,18 @@ class CausalCIT(nn.Module):
         else:
             self.model = CausalCIT_backbone(**backbone_kwargs)
 
-    def forward(self, x):
+    def forward(self, x, env_labels=None):
         # x: [Batch, Input length, Channel]
         if self.decomposition:
             res_init, trend_init = self.decomp_module(x)
             res_init = res_init.permute(0, 2, 1)
             trend_init = trend_init.permute(0, 2, 1)
-            res = self.model_res(res_init)
-            trend = self.model_trend(trend_init)
+            res = self.model_res(res_init, env_labels)
+            trend = self.model_trend(trend_init, env_labels)
             x = (res + trend).permute(0, 2, 1)
         else:
             x = x.permute(0, 2, 1)
-            x = self.model(x)
+            x = self.model(x, env_labels)
             x = x.permute(0, 2, 1)
         return x
 

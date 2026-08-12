@@ -111,6 +111,57 @@ python run_large.py gen --datasets traffic --variants full_v2_fixed \
 
 ## 二、不需要 GPU 的剩余工作
 
+### 0 GPU 已完成 (2026-08-12, 本轮)
+
+- [x] **修 C 可行性评估** (数据驱动, 结论: 可行): `assess_env_split.py` +
+      `docs/diagnostics/2026-08-12_env_split_feasibility.md`。
+      语义环境切分信息量 = 随机均分的 **4–14×** (ETTh1 昼夜 13.7×, weather 季节 4.2×);
+      工作日/周末单独无信息 (1.2–1.9×)。→ 修 C (语义环境切分) 有数据支撑。
+- [x] **想法 1 立项** (DRO 式风险厌恶): `02_research_notes/ideas/04_dro_risk_aversion/`
+      (00_spark + 01_proposal)。语义环境评估直接支撑其"环境用语义定义"假设。
+- [x] **方案 1 训练前适用性判据**: `compute_pre_train_stats.py` (0 GPU, 任意数据路径),
+      已算 ETTh1/ETTm1/weather/exchange 统计量 (依赖密度/语义环境信息量/稳定通道对占比),
+      json 落盘。**待 P0-1 主表后与增益做严格对应** (7 数据点, 启发性证据)。
+- [x] **`run_large.py` 新增 `--alpha_init` / `--fusion_alpha` 透传** (CPU gen 验证通过):
+      3b syn_ood 排查的前置, GPU 可跑。
+- [x] **方案 3b 排查方案文档**: `docs/diagnostics/2026-08-12_synood_utilization_plan.md`
+      (alpha_init/fusion_alpha 单因子+组合扫描, 判据与 GPU 命令齐备)。
+- [x] **方案 4 PCD 转资产**: `vs_difference_argument.md` §3.1 (主动引用 PCD 独立复现维度规律)。
+- [x] **论文草稿 §2.8 训练前适用性判据**: `06_paper_chapter_draft.md`。
+- [x] **清理**: 删除根目录 `research-org.zip`; 修正冗余数据副本 (评估统一用 01_external 已有数据)。
+- [x] **修 C 实施（代码就绪, CPU smoke 3/3 通过）**: 语义环境切分管线全链路 —
+      `data.py` (Dataset 返回 (x,y,env_label), `env_scheme`=season/daynight/tod/wd),
+      `causal_channel.py` (`CausalStabilityGate env_mode='semantic'` 按语义标签分组估 HSIC),
+      `causalcit.py`+`models_ablation.py` (forward 透传 env_labels),
+      `trainer.py` (三元组 batch), `run_large.py` (`--env_mode`/`--env_scheme`)。
+      默认 `uniform`/`None` 保持旧行为, 不破坏 P0-1 复现。
+- [x] **想法 1 DRO 实现（代码就绪, CPU smoke 3/3 通过）**: `trainer.py` `risk_lambda` +
+      `L = mean_e(ℓ_e) + λ·var_e(ℓ_e)` 按环境分组损失 (环境数<2 退化为 ERM);
+      `run_large.py` (`--risk_lambda`)。syn_ood 无时间戳, DPO 自动退化为 ERM (无害)。
+
+### GPU 待跑 (P0-1 主表完成后; 前置代码均已就绪并 CPU 验证)
+
+> P0-1 状态 (2026-08-12 16:31 b1403aa): 已回传 219/816 (27%) 快照, 高维 full_v2_fixed
+> 8-seed 全面翻正 (traffic pl192 +12.1%)。剩余 ~597 job 待跑, ⚠️ 服务器是否仍在跑需核实
+> (详见 PROGRESS.md「P0-1 部分结果快照」)。以下任务在 P0-1 收尾后执行。
+
+1. **修 C 验证** (weather/electricity, uniform vs semantic):
+   ```sh
+   python run_large.py gen --datasets weather electricity --variants full_v2_fixed \
+       --seeds 42 123 2024 7 13 99 2023 31 --num_shards 3 \
+       --env_mode semantic --env_scheme season --output_dir ./output_fixC_semantic
+   # run + summarize; 与 output_large_v3 (uniform) 对比, 判据: semantic 的 cv 提升 / 收益改善
+   ```
+2. **3b syn_ood 网格** (`--alpha_init`/`--fusion_alpha`): 见 `docs/diagnostics/2026-08-12_synood_utilization_plan.md`
+3. **DRO λ 消融** (weather/electricity, capacity_match):
+   ```sh
+   for lb in 0 0.1 1; do python run_large.py gen --datasets weather electricity \
+       --variants capacity_match --seeds 42 123 2024 7 13 99 2023 31 --num_shards 3 \
+       --env_scheme season --risk_lambda $lb --output_dir ./output_dro_lambda_$lb; done
+   ```
+4. **方案 1 补测** (近 0 GPU): 服务器上对 traffic/electricity/ILI 跑
+   `compute_pre_train_stats.py` (脚本任意路径可用)
+
 ### P0-2 统一 collapsed 判据 (审稿硬伤) — ✅ 2026-08-10 完成
 - 两处已统一为常量 `COLLAPSED_STD_THRESHOLD = 0.01`
   (`run_minimal_falsifiable.py` 顶部 + `analyze_gates.py` 顶部, 互有注释指认)。
