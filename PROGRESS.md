@@ -27,15 +27,15 @@ PatchTST backbone + HSIC 稳定性门控），论证其对 OOD 泛化的价值�
       (pl96 +2.7~+4.8%、pl192 +1.1~+1.4%)，electricity 提升加大 (pl96 +5.3~+8.3%)；weather pl336 仍轻微负
       (-1.2~-2.1%，符合长 horizon 退化假设)。注：旧 `output_large_v2` PatchTST 仅 3-seed，靶场为方向性验证，
       最终显著性由 P0-1 主表 (含 8-seed PatchTST) 给出。
-- [x] **P0-1 重跑主表（2026-08-12 gen 完成，待启动）**：6 数据集 × 6 变体 × 8 seed + `--dump_gates`，
-      816 job / 3 shard 已 `gen`，输出 `output_large_v3`。启动命令见下方"下一步"。
+- [x] **P0-1 重跑主表（2026-08-12 已启动）**：6 数据集 × 6 变体 × 8 seed + `--dump_gates`，
+      816 job / 3 shard，3×RTX4090 并行跑中，输出 `output_large_v3`。脚本 `_run_p0_main.sh`。
 
 ### 未完成 / 有问题
 - [ ] 根因 3（语义环境切分）未修：`cv≈0.005`，稳定性项仍无信息（需时间戳/真实数据）
 - [ ] syn_ood 机制测试未通过（−1.21%）；PCD 与 full_v2 打平
 - [ ] 高维门控矩阵（traffic/electricity）未 dump，聚类热图缺数据（P0-1 已带 --dump_gates，跑完可补）
 - [ ] 遗留待清理：根目录 `research-org.zip`、空中文文件夹、`__pycache__`
-- [ ] P0-1 主表 gen 完成（816 job），**待用户确认启动**（预计 1 天+），`output_large_v3` 最终报告待生成
+- [ ] P0-1 主表跑中（预计 1 天+），`output_large_v3` 最终报告待生成（含 8-seed PatchTST 对照 + 显著性）
 
 ## 下一步 (按优先级)
 
