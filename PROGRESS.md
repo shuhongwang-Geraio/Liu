@@ -27,9 +27,12 @@ PatchTST backbone + HSIC 稳定性门控），论证其对 OOD 泛化的价值�
       (pl96 +2.7~+4.8%、pl192 +1.1~+1.4%)，electricity 提升加大 (pl96 +5.3~+8.3%)；weather pl336 仍轻微负
       (-1.2~-2.1%，符合长 horizon 退化假设)。注：旧 `output_large_v2` PatchTST 仅 3-seed，靶场为方向性验证，
       最终显著性由 P0-1 主表 (含 8-seed PatchTST) 给出。
-- [x] **P0-1 重跑主表（2026-08-12 已启动，跑中）**：6 数据集 × 6 变体 × 8 seed + `--dump_gates`，
-      816 job / 3 shard，3×RTX4090 并行，输出 `output_large_v3`。脚本 `_run_p0_main.sh`。
-      已回传部分结果（见下节快照）。
+- [x] **P0-1 重跑主表（2026-08-13 完成）**：6 数据集 × 6 变体 × 8 seed + `--dump_gates`，
+      816 job / 3 shard，3×RTX4090 并行，输出 `output_large_v3/large_scale_report.md`。
+      脚本 `_run_p0_main.sh`。2 个 traffic no_env seed 超时（已有 7/8，够用）。
+      最终结论: traffic +8.81%、electricity +3.07% 显著优于 PatchTST (Holm p<0.05);
+      etth1/weather/etm1 长程仍退化; weather pl96 修复版翻正 +2.76%* (旧版为负)。
+      门控 dump 已产出待聚类热图分析。部分结果快照见下节（已过时，以最终报告为准）。
 
 ### P0-1 部分结果快照（2026-08-12 16:31 服务器提交 b1403aa）
 - 进度 **219/816 (27%)，errors=0**；旧 `output_large` 已归档为 `output_large_pre_fix_2026-07-22`。
@@ -65,9 +68,7 @@ PatchTST backbone + HSIC 稳定性门控），论证其对 OOD 泛化的价值�
 - [ ] syn_ood 机制测试未通过（−1.21%）；PCD 与 full_v2 打平
 - [ ] 高维门控矩阵（traffic/electricity）未 dump，聚类热图缺数据（P0-1 已带 --dump_gates，跑完可补）
 - [ ] 遗留待清理：`__pycache__`（无害缓存，可择机统一清理；`research-org.zip` 与空中文文件夹已于 2026-08-12 清理）
-- [ ] P0-1 主表剩余 ~597 job（ettm1/exchange/ili 全量 + 高维其余变体 + weather336 部分）；
-      ⚠️ **需服务器确认是否仍在跑**（commit "跑完了" 与实际 27% 不符，见快照节）；
-      完成后 `summarize` 生成最终报告（8-seed PatchTST 对照 + Wilcoxon 显著性 + 高维热图）
+- [x] P0-1 主表已完，`output_large_v3` 报告已生成（含 8-seed PatchTST 对照 + Holm 显著性）；高维门控 dump 已产出，待聚类热图分析
 
 ## 下一步 (按优先级)
 
