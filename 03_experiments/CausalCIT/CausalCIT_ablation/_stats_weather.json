@@ -1,0 +1,14 @@
+{
+  "dataset": "weather",
+  "C": 21,
+  "N": 52696,
+  "dep_density_avg_abs_corr": 0.29698,
+  "lag1_autocorr": 0.97292,
+  "env_info_season_pair_diff": 0.0198,
+  "env_info_daynight_pair_diff": 0.01477,
+  "env_info_rand_split_ref": 0.00469,
+  "env_ratio_season_over_rand": 4.22,
+  "env_ratio_daynight_over_rand": 3.15,
+  "stable_pair_frac_season": 0.1571,
+  "stable_pair_frac_daynight": 0.4143
+}

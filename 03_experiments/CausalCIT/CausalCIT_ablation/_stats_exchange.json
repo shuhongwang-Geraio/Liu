@@ -1,0 +1,14 @@
+{
+  "dataset": "exchange",
+  "C": 8,
+  "N": 7588,
+  "dep_density_avg_abs_corr": 0.51304,
+  "lag1_autocorr": 0.99994,
+  "env_info_season_pair_diff": 0.02208,
+  "env_info_daynight_pair_diff": 0.0,
+  "env_info_rand_split_ref": 0.00595,
+  "env_ratio_season_over_rand": 3.71,
+  "env_ratio_daynight_over_rand": 0.0,
+  "stable_pair_frac_season": 0.7143,
+  "stable_pair_frac_daynight": NaN
+}

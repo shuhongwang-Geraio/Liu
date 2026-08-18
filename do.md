@@ -139,11 +139,24 @@ python run_large.py gen --datasets traffic --variants full_v2_fixed \
       `L = mean_e(ℓ_e) + λ·var_e(ℓ_e)` 按环境分组损失 (环境数<2 退化为 ERM);
       `run_large.py` (`--risk_lambda`)。syn_ood 无时间戳, DPO 自动退化为 ERM (无害)。
 
-### GPU 待跑 (P0-1 主表完成后; 前置代码均已就绪并 CPU 验证)
+### 0 GPU 已完成 (2026-08-18, P0-1 完成后)
 
-> P0-1 状态 (2026-08-12 16:31 b1403aa): 已回传 219/816 (27%) 快照, 高维 full_v2_fixed
-> 8-seed 全面翻正 (traffic pl192 +12.1%)。剩余 ~597 job 待跑, ⚠️ 服务器是否仍在跑需核实
-> (详见 PROGRESS.md「P0-1 部分结果快照」)。以下任务在 P0-1 收尾后执行。
+- [x] **P0-1 完成确认**: 816/816 (2 traffic no_env seed 超时, 7/8 够用), `_DONE.txt` 存在,
+      最终报告 `output_large_v3/large_scale_report.md` (2026-08-13 22:34, 8-seed 配对 Wilcoxon)。
+- [x] **方案 1 对应分析**: `correspond_analysis.py` + `docs/diagnostics/2026-08-18_applicability_criterion.md`。
+      依赖密度符号一致率 **9/11**, 稳定占比 8/11, 语义信息量 5/11 (无预测力);
+      horizon 效应独立 (短正长负); 判据需按 horizon 分层。traffic/elec/ili 统计量待服务器补。
+- [x] **修复版适用边界**: `fixAB_boundary.py` — weather (8/8 seed, -3.25%) 与 electricity (8/8, -2.01%)
+      修复版全面有效; **traffic (0/8, +1.18%) 失效** (median 带宽在 862 通道失真)。
+- [x] **3b 组合配置 CPU smoke 4/4**: syn_ood + `--alpha_init 0.0 --fusion_alpha 0.5` 透传生效。
+- [x] **ili pl24 诚实讨论**: 论文 §2.7 Limitations 第 5 条 (-11.51% 显著负, 低维小样本 regime) +
+      第 6 条 (修复版带宽边界)。
+- [x] **服务器执行手册**: `docs/server_tasks_2026-08-18.md` (高维热图 / 3b 网格 / 修 C / DRO / 补统计量,
+      含回传要求)。
+
+### GPU 待跑 (P0-1 已完成 ✅; 完整命令见 `docs/server_tasks_2026-08-18.md`)
+
+> P0-1 已于 2026-08-13 `_DONE` (816/816)。以下任务待服务器执行, 前置代码均已就绪并 CPU 验证。
 
 1. **修 C 验证** (weather/electricity, uniform vs semantic):
    ```sh

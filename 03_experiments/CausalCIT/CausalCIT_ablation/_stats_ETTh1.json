@@ -1,0 +1,14 @@
+{
+  "dataset": "ETTh1",
+  "C": 7,
+  "N": 17420,
+  "dep_density_avg_abs_corr": 0.22208,
+  "lag1_autocorr": 0.96897,
+  "env_info_season_pair_diff": 0.06659,
+  "env_info_daynight_pair_diff": 0.0854,
+  "env_info_rand_split_ref": 0.00626,
+  "env_ratio_season_over_rand": 10.64,
+  "env_ratio_daynight_over_rand": 13.65,
+  "stable_pair_frac_season": 0.2381,
+  "stable_pair_frac_daynight": 0.4286
+}

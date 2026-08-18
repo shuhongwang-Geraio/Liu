@@ -1,7 +1,7 @@
 # PROGRESS.md — CausalCIT 项目进度单一事实来源
 
 > 按 research-org 规范维护。每次工作会话结束更新；详细待办命令见 `do.md`。
-> 最近更新: 2026-08-12
+> 最近更新: 2026-08-18
 
 ## 项目目标
 
@@ -61,28 +61,39 @@ PatchTST backbone + HSIC 稳定性门控），论证其对 OOD 泛化的价值�
       - 想法 1 DRO 实现（代码就绪, CPU smoke 3/3）：`trainer.py` `risk_lambda` +
         按环境分组损失 `L=mean_e+λ·var_e`；`--risk_lambda`（syn_ood 无时间戳自动退化 ERM）
       - 清理：删除 `research-org.zip`、修正数据冗余（评估统一用 01_external 已有数据）
+- [x] **0 GPU 批（2026-08-18, P0-1 完成后）**：
+      - 方案 1 对应分析：`correspond_analysis.py` + `docs/diagnostics/2026-08-18_applicability_criterion.md`
+        —— 依赖密度符号一致 **9/11**、稳定占比 8/11、语义信息量 5/11（无预测力）；horizon 效应独立（短正长负）
+      - 修复版适用边界：`fixAB_boundary.py` —— weather (8/8, -3.25%) / electricity (8/8, -2.01%) 修复版有效；
+        **traffic (0/8, +1.18%) 失效**（median 带宽 862 通道失真）
+      - 3b 组合配置 CPU smoke 4/4（syn_ood + alpha_init/fusion_alpha 透传）
+      - ili pl24 诚实讨论入论文 §2.7（-11.51% 显著负，低维小样本 regime）+ 修复版边界第 6 条
+      - 服务器执行手册：`docs/server_tasks_2026-08-18.md`（高维热图 / 3b / 修 C / DRO / 补统计量 + 回传要求）
 
 ### 未完成 / 有问题
 - [ ] 修 C **GPU 验证**：实现已就绪（CPU smoke 3/3），需 weather/electricity 上
-      uniform vs semantic 对比（命令见 `do.md`「GPU 待跑」），实测 cv 是否提升、收益是否改善
-- [ ] syn_ood 机制测试未通过（−1.21%）；PCD 与 full_v2 打平
-- [ ] 高维门控矩阵（traffic/electricity）未 dump，聚类热图缺数据（P0-1 已带 --dump_gates，跑完可补）
+      uniform vs semantic 对比（命令见 `docs/server_tasks_2026-08-18.md` §3）
+- [ ] syn_ood 机制测试未通过（−1.21%）；3b 网格待跑（`--alpha_init`/`--fusion_alpha`，手册 §2）
+- [ ] 高维门控聚类热图：dump 已产出（服务器 `output_large_v3/gates/`），
+      需在服务器跑 `plot_gate_heatmaps.py`（手册 §1）后回传分析
+- [ ] 方案 1 判据补数据点：服务器补 traffic/electricity/ILI 统计量（手册 §5），本机重跑对应
+- [ ] DRO λ 消融（手册 §4）与想法 2 对比评审（决定并行线优先级）
 - [ ] 遗留待清理：`__pycache__`（无害缓存，可择机统一清理；`research-org.zip` 与空中文文件夹已于 2026-08-12 清理）
 - [x] P0-1 主表已完，`output_large_v3` 报告已生成（含 8-seed PatchTST 对照 + Holm 显著性）；高维门控 dump 已产出，待聚类热图分析
 
 ## 下一步 (按优先级)
 
-1. **GPU：P0-1 重跑主表（跑中）**——完成后用 `summarize` 出 8-seed PatchTST 对照 + 显著性，
-   重新生成 bootstrap CI 图与高维门控热图；用新数字替换所有草稿性能引用。
-2. **GPU（P0-1 后，前置代码均已就绪并 CPU 验证）**：
-   修 C 验证（`--env_mode semantic --env_scheme season`）、3b syn_ood 网格
-   （`--alpha_init`/`--fusion_alpha`）、DRO λ 消融（`--risk_lambda ∈ {0,0.1,1}`）；
-   完整命令见 `do.md`「GPU 待跑」。
-3. **近 0 GPU**：服务器上对 traffic/electricity/ILI 补跑
-   `assess_env_split.py` + `compute_pre_train_stats.py`。
-4. **0 GPU（P0-1 出结果后）**：方案 1 训练前统计量 vs 增益符号对应（脚本 `compute_pre_train_stats.py` 已就绪）。
-5. **0 GPU：想法 2（可逆解耦）对比评审**——决定与 04_dro_risk_aversion 的并行线优先级。
-6. **0 GPU：写作**——差异论证（含 PCD 转资产 §3.1）、论文 §2.8 适用性判据已落地，待 P0-1 数字替换。
+1. **GPU（服务器, 命令见 `docs/server_tasks_2026-08-18.md`）**：
+   ① 高维门控聚类热图（`plot_gate_heatmaps.py`, 数据已 dump）；
+   ② 3b syn_ood 网格（`--alpha_init`/`--fusion_alpha`）；
+   ③ 修 C semantic 验证（weather/electricity）；
+   ④ DRO λ 消融（weather/electricity, `--risk_lambda`）；
+   ⑤ 补 traffic/electricity/ILI 训练前统计量。
+2. **0 GPU（统计量回传后）**：重跑 `correspond_analysis.py` 做 7 数据集判据验证
+   （预期: 依赖密度高者正增益, 补 3 点后确认）。
+3. **0 GPU：想法 2（可逆解耦）对比评审**——决定与 04_dro_risk_aversion 的并行线优先级。
+4. **0 GPU：写作**——差异论证（含 PCD 转资产 §3.1）、论文 §2.7/§2.8 已落地；
+   用 P0-1 最终数字替换所有草稿性能引用。
 
 ## 备注
 

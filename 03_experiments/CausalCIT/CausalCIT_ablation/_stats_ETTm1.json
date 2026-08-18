@@ -1,0 +1,14 @@
+{
+  "dataset": "ETTm1",
+  "C": 7,
+  "N": 69680,
+  "dep_density_avg_abs_corr": 0.22408,
+  "lag1_autocorr": 0.99071,
+  "env_info_season_pair_diff": 0.06667,
+  "env_info_daynight_pair_diff": 0.08815,
+  "env_info_rand_split_ref": 0.0026,
+  "env_ratio_season_over_rand": 25.69,
+  "env_ratio_daynight_over_rand": 33.97,
+  "stable_pair_frac_season": 0.2381,
+  "stable_pair_frac_daynight": 0.4286
+}
