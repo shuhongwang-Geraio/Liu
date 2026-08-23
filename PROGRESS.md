@@ -1,7 +1,7 @@
 # PROGRESS.md — CausalCIT 项目进度单一事实来源
 
 > 按 research-org 规范维护。每次工作会话结束更新；详细待办命令见 `do.md`。
-> 最近更新: 2026-08-18
+> 最近更新: 2026-08-23
 
 ## 项目目标
 
@@ -79,21 +79,26 @@ PatchTST backbone + HSIC 稳定性门控），论证其对 OOD 泛化的价值�
 - [ ] 方案 1 判据补数据点：服务器补 traffic/electricity/ILI 统计量（手册 §5），本机重跑对应
 - [ ] DRO λ 消融（手册 §4）与想法 2 对比评审（决定并行线优先级）
 - [ ] 遗留待清理：`__pycache__`（无害缓存，可择机统一清理；`research-org.zip` 与空中文文件夹已于 2026-08-12 清理）
-- [x] P0-1 主表已完，`output_large_v3` 报告已生成（含 8-seed PatchTST 对照 + Holm 显著性）；高维门控 dump 已产出，待聚类热图分析
+- [x] P0-1 主表已完，`output_large_v3` 报告已生成（含 8-seed PatchTST 对照 + Holm 显著性）；高维门控 dump 已产出
+- [x] ⭐ **GPU 第二轮回传综合 (2026-08-23, 5d81de0)**：
+  - 修 C 语义切分 5/5 组均稍差 → 止损，改报负结果
+  - DRO λ=0.1 弱正（weather pl192 -1.16% 单调），不作为主贡献
+  - **syn_ood 修复版 +44.2~44.8% vs patchtst（旧版 +0.66%）→ 机制测试通过，OOD 直接证据** ⭐
+  - 7 数据集判据验证：依赖密度/稳定占比 13/17（76%），ili 是 horizon 强反例
+  - **高维门控诊断：full_v2_fixed 最佳平衡（off_std=0.062, batch_dep≈0），electricity 块对角结构 → 选到真实依赖** ⭐
+  - 详见 `docs/post_run_analysis_2026-08-23.md`
 
 ## 下一步 (按优先级)
 
-1. **GPU（服务器, 命令见 `docs/server_tasks_2026-08-18.md`）**：
-   ① 高维门控聚类热图（`plot_gate_heatmaps.py`, 数据已 dump）；
-   ② 3b syn_ood 网格（`--alpha_init`/`--fusion_alpha`）；
-   ③ 修 C semantic 验证（weather/electricity）；
-   ④ DRO λ 消融（weather/electricity, `--risk_lambda`）；
-   ⑤ 补 traffic/electricity/ILI 训练前统计量。
-2. **0 GPU（统计量回传后）**：重跑 `correspond_analysis.py` 做 7 数据集判据验证
-   （预期: 依赖密度高者正增益, 补 3 点后确认）。
-3. **0 GPU：想法 2（可逆解耦）对比评审**——决定与 04_dro_risk_aversion 的并行线优先级。
-4. **0 GPU：写作**——差异论证（含 PCD 转资产 §3.1）、论文 §2.7/§2.8 已落地；
-   用 P0-1 最终数字替换所有草稿性能引用。
+1. **GPU（服务器, 待 `5d81de0` 已回传数据后的延伸）**：
+   ① **syn_ood 同 seed 配对显著性**: 用主表 8 seed 重跑 syn_ood full_v2_fixed vs patchtst,
+   配对 Wilcoxon → 把 +44% 升级为"显著"证据;
+   ② **DRO 显著性补**: λ=0.1 vs λ=0 weather pl192 配对 Wilcoxon;
+   ③ **traffic 门控热图**: 子采样 + 聚类 (862 通道 dump 大, 服务器上跑);
+   ④ **想法 2（可逆解耦）**对比评审 — 决定是否替代想法 1 (DRO 弱, 想法 1 不再优先)。
+2. **0 GPU**: 论文 §2.7/§2.8 用 P0-1 + 第二轮结果全面替换数字; 整合
+   `docs/post_run_analysis_2026-08-23.md` 结论; syn_ood +44% 写进摘要。
+3. **0 GPU**: 想法 2 立项 (若评审通过)。
 
 ## 备注
 

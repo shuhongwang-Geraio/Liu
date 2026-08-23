@@ -154,6 +154,24 @@ python run_large.py gen --datasets traffic --variants full_v2_fixed \
 - [x] **服务器执行手册**: `docs/server_tasks_2026-08-18.md` (高维热图 / 3b 网格 / 修 C / DRO / 补统计量,
       含回传要求)。
 
+### 0 GPU 已完成 (2026-08-23, GPU 第二轮回传后)
+
+- [x] **修 C 语义切分止损**: 5/5 组 uniform vs semantic (season) 均 semantic 略差
+      (+0.06~+2.64%); 数据上有信息 ≠ 训练时能用上 (批内每环境 ~8 样本, HSIC 方差大)。
+      论文 §2.7 第 8 条: 改报 "负结果 + 原因" 作为诚实边界, 不提为方案。
+- [x] **DRO λ 弱正信号**: λ=0.1 全部 5 组不差于 ERM, weather pl192 单调 -1.16%;
+      提升 < 1%, 远不及 full_v2_fixed vs patchtst 的 +3~9%。不作为主要贡献。
+- [x] **⭐ syn_ood 机制测试通过**: 修复版 full_v2_fixed 在合成 OOD **+44.2~44.8% 显著
+      超越 patchtst (8 配置一致, 无调参必要)**; 旧 full_v2 仅 +0.66% 打平。
+      机制测试从 "未通过 (-1.21%)" 升级为 "直接证据"。**论文 OOD 鲁棒性宣称从 "受限" 升级为 "强证据"**。
+- [x] **7 数据集判据扩展验证**: 依赖密度+稳定占比 **13/17 (76%)**; ili 是 horizon 强反例
+      (pl24 -11.51% vs pl48 +6.40%, 同一数据集差 18 pp) → 判据需加 "足够样本量" 条件。
+- [x] **⭐ 高维门控诊断**: full_v2_fixed (off_std=0.062, collapse=0%, batch_dep≈0) 最佳
+      平衡; 旧 full_v2 batch_dep=0.34 跨 batch 不稳定被修复 A+B 解决。electricity 热图
+      (50/321 子采样) 清晰块对角结构 → 门控选到真实依赖结构 (电力客户聚类)。
+- [x] **综合分析报告**: `docs/post_run_analysis_2026-08-23.md` (7 节)。
+- [x] **论文草稿更新**: §2.7 第 7-10 条 (syn_ood 通过 / 修 C 止损 / DRO 弱正 / 诊断结论)。
+
 ### GPU 待跑 (P0-1 已完成 ✅; 完整命令见 `docs/server_tasks_2026-08-18.md`)
 
 > P0-1 已于 2026-08-13 `_DONE` (816/816)。以下任务待服务器执行, 前置代码均已就绪并 CPU 验证。
