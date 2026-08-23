@@ -88,17 +88,31 @@ PatchTST backbone + HSIC 稳定性门控），论证其对 OOD 泛化的价值�
   - **高维门控诊断：full_v2_fixed 最佳平衡（off_std=0.062, batch_dep≈0），electricity 块对角结构 → 选到真实依赖** ⭐
   - 详见 `docs/post_run_analysis_2026-08-23.md`
 
-## 下一步 (按优先级)
+## 剩余任务总清单（一次跑完，跑完前不回传）
 
-1. **GPU（服务器, 待 `5d81de0` 已回传数据后的延伸）**：
-   ① **syn_ood 同 seed 配对显著性**: 用主表 8 seed 重跑 syn_ood full_v2_fixed vs patchtst,
-   配对 Wilcoxon → 把 +44% 升级为"显著"证据;
-   ② **DRO 显著性补**: λ=0.1 vs λ=0 weather pl192 配对 Wilcoxon;
-   ③ **traffic 门控热图**: 子采样 + 聚类 (862 通道 dump 大, 服务器上跑);
-   ④ **想法 2（可逆解耦）**对比评审 — 决定是否替代想法 1 (DRO 弱, 想法 1 不再优先)。
-2. **0 GPU**: 论文 §2.7/§2.8 用 P0-1 + 第二轮结果全面替换数字; 整合
-   `docs/post_run_analysis_2026-08-23.md` 结论; syn_ood +44% 写进摘要。
-3. **0 GPU**: 想法 2 立项 (若评审通过)。
+### 服务器 GPU（一键脚本 `_run_all_remaining.sh`，跑完生成 `_ALL_DONE.txt` 才允许回传）
+
+| 阶段 | 内容 | 目的 | 预计 |
+|------|------|------|------|
+| S1 | syn_ood 配对显著性（patchtst+full_v2_fixed，主表 8 seed） | +44% 升级为 Wilcoxon 显著 | ~30min |
+| S2 | P1-2 baseline（dlinear+itransformer，6 数据集 × 8 seed） | 审稿 re2 必需对照 | 1-2 天 |
+| S3 | P1-1 敏感性（traffic：n_envs 2/8，rff_dim 16/64） | 结论不依赖超参脆点 | 2-4h |
+| S4 | P1-3 熵正则（traffic，ew 0.01/0.1） | 门控熵正则消融 | 1-2h |
+| S5 | traffic 门控热图（子采样 50，dump 已有） | 高维门控结构可视化 | ~min |
+
+> 不需要再跑（已结论）：DRO λ 配对（本机 p=0.195 不显著）、修 C semantic（已止损 5/5 组）。
+
+### 0 GPU（本机，随时可做）
+1. 论文 §2.7/§2.8 全面替换为 P0-1 + 第二轮数字；syn_ood +44% 写进摘要；
+   整合 `docs/post_run_analysis_2026-08-23.md`
+2. S1/S2 回传后：syn_ood 配对 Wilcoxon、baseline 对照表、敏感性表进论文
+3. 想法 2（可逆解耦）对比评审——决定是否替代想法 1（DRO 弱正，想法 1 不优先）
+4. traffic 热图回传后：聚类解读进论文
+
+### 回传规则（重要）
+- 服务器只提交一次：`_ALL_DONE.txt` 存在后，`git add -A && commit && push`；
+  提交信息含各阶段完成计数（脚本已自动写入 `_ALL_DONE.txt`）
+- 中途禁止单独回传（避免零碎交互）
 
 ## 备注
 

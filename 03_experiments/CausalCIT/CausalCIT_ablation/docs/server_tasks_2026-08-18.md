@@ -1,10 +1,35 @@
-# 服务器任务执行手册 (2026-08-18)
+# 服务器任务执行手册 (2026-08-23 更新)
 
-> 前置: `git pull` 到最新 (含 6cf4d13 的修 C / DRO / 参数透传代码, 均已 CPU 验证)。
-> P0-1 主表已 `_DONE` (2026-08-13), 以下任务可并行/排队执行。
-> 所有命令在 `03_experiments/CausalCIT/CausalCIT_ablation/` 下执行。
-> 数据路径: 服务器上 P0-1 使用的 dataset_dir (有 traffic/electricity/ILI csv 的目录),
-> 记作 `<DD>`。
+> **主入口: 一键脚本 `_run_all_remaining.sh`** (推荐, 跑完前不回传)。
+> 前置: `git pull` 到最新。P0-1 已 `_DONE` (2026-08-13), 第二轮 (修 C/DRO/syn_ood 网格/
+> 热图/统计量) 已回传并分析 (commit 4490d4e)。
+> 数据路径: `/home/wangsh/workspace/Liu/01_external/PatchTST/code/dataset` (记作 `<DD>`)。
+
+## 一键执行 (推荐)
+
+```bash
+cd <repo>/03_experiments/CausalCIT/CausalCIT_ablation
+bash _run_all_remaining.sh        # 默认 REPO=/home/wangsh/workspace/Liu
+```
+
+- 依次执行 S1→S5 (见脚本头注释), 3 卡并行, 每阶段 `_STAGE_DONE` 断点续跑;
+- **全部完成后才生成 `_ALL_DONE.txt`, 只有它存在才允许回传** (git add+commit+push);
+- 中途断开直接重跑即可 (已完成的自动跳过)。
+
+### 阶段清单
+
+| 阶段 | 内容 | 预计 |
+|------|------|------|
+| S1 | **syn_ood 配对显著性** (patchtst+full_v2_fixed, 主表 8 seed) → 把 +44% 升级为 Wilcoxon 显著 | ~30min |
+| S2 | **P1-2 baseline** (dlinear+itransformer, 6 数据集 × 8 seed, 审稿 re2 必需) | 1-2 天 |
+| S3 | P1-1 敏感性 (traffic full_v2_fixed: n_envs 2/8, rff_dim 16/64) | 2-4h |
+| S4 | P1-3 熵正则 (traffic, ew 0.01/0.1) | 1-2h |
+| S5 | traffic 门控热图 (子采样 50, dump 已在服务器) | ~min |
+
+> 注: DRO 配对显著性已在本机完成 (weather pl192 λ=0.1 vs 0, p=0.195 不显著, 无需再跑);
+> 修 C semantic 已止损 (5/5 组 uniform 更优, 不再跑)。
+
+## 手动执行 (不推荐, 仅调试用)
 
 ## 0. 先确认代码是最新
 
