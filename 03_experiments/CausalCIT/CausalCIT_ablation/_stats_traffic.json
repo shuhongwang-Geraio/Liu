@@ -1,0 +1,14 @@
+{
+  "dataset": "traffic",
+  "C": 862,
+  "N": 17544,
+  "dep_density_avg_abs_corr": 0.5638,
+  "lag1_autocorr": 0.85554,
+  "env_info_season_pair_diff": 0.0002,
+  "env_info_daynight_pair_diff": 0.00083,
+  "env_info_rand_split_ref": 5e-05,
+  "env_ratio_season_over_rand": 3.89,
+  "env_ratio_daynight_over_rand": 16.1,
+  "stable_pair_frac_season": 0.7908,
+  "stable_pair_frac_daynight": 0.2451
+}

@@ -1,0 +1,7 @@
+dataset,pred_len,variant,seed,mse,mae,rmse,params,epochs,time
+electricity,96,full_v2_fixed,42,0.160403,0.254680,0.400504,186455,17,1539.3
+electricity,96,full_v2_fixed,7,0.164998,0.255755,0.406200,186455,15,1376.7
+electricity,96,full_v2_fixed,2023,0.163703,0.256108,0.404602,186455,15,1092.2
+electricity,192,full_v2_fixed,123,0.173147,0.263218,0.416109,223415,16,1680.1
+electricity,192,full_v2_fixed,13,0.173426,0.263428,0.416444,223415,17,1886.7
+electricity,192,full_v2_fixed,31,0.178743,0.267086,0.422780,223415,16,1606.8

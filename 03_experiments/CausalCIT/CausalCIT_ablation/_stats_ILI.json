@@ -1,0 +1,14 @@
+{
+  "dataset": "ILI",
+  "C": 7,
+  "N": 966,
+  "dep_density_avg_abs_corr": 0.70775,
+  "lag1_autocorr": 0.99634,
+  "env_info_season_pair_diff": 0.03813,
+  "env_info_daynight_pair_diff": 0.0,
+  "env_info_rand_split_ref": 0.01578,
+  "env_ratio_season_over_rand": 2.42,
+  "env_ratio_daynight_over_rand": 0.0,
+  "stable_pair_frac_season": 0.4286,
+  "stable_pair_frac_daynight": NaN
+}

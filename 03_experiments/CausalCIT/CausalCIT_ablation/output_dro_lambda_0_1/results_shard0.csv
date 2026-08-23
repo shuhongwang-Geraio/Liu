@@ -1,0 +1,4 @@
+dataset,pred_len,variant,seed,mse,mae,rmse,params,epochs,time
+electricity,96,capacity_match,42,0.161873,0.255465,0.402335,186404,15,1140.1
+electricity,96,capacity_match,7,0.161250,0.254189,0.401559,186404,14,934.8
+electricity,96,capacity_match,2023,0.164956,0.256333,0.406148,186404,16,1137.2

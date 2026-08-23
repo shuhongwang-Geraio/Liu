@@ -1,0 +1,6 @@
+dataset,pred_len,variant,seed,mse,mae,rmse,params,epochs,time
+syn_ood,96,full_v2_fixed,2024,0.328161,0.388319,0.572853,250841,19,169.0
+syn_ood,96,full_v2_fixed,99,0.299090,0.358329,0.546891,250841,15,131.2
+syn_ood,192,full_v2_fixed,42,0.350445,0.423153,0.591984,324665,18,403.9
+syn_ood,192,full_v2_fixed,7,0.327965,0.397462,0.572682,324665,16,486.8
+syn_ood,192,full_v2_fixed,2023,0.412456,0.457340,0.642228,324665,20,498.9

@@ -1,0 +1,14 @@
+{
+  "dataset": "electricity",
+  "C": 321,
+  "N": 26304,
+  "dep_density_avg_abs_corr": 0.48945,
+  "lag1_autocorr": 0.98372,
+  "env_info_season_pair_diff": 0.00068,
+  "env_info_daynight_pair_diff": 0.00085,
+  "env_info_rand_split_ref": 8e-05,
+  "env_ratio_season_over_rand": 8.75,
+  "env_ratio_daynight_over_rand": 10.96,
+  "stable_pair_frac_season": 0.614,
+  "stable_pair_frac_daynight": 0.7298
+}
